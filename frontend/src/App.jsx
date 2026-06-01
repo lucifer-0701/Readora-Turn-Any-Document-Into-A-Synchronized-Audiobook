@@ -9,7 +9,7 @@ import Footer from './components/Footer';
 const NotesBookmarkPanel = React.lazy(() => import('./components/NotesBookmarkPanel'));
 const AnalyticsDashboard = React.lazy(() => import('./components/AnalyticsDashboard'));
 import useAnalytics from './hooks/useAnalytics';
-import { Sparkles, Heart, CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
+import { Sparkles, CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 import { saveDocumentContent, getDocumentContent, deleteDocumentContent, clearAllDocuments } from './utils/libraryDb';
 import useGoalsAchievements from './hooks/useGoalsAchievements';
 import AchievementNotification from './components/AchievementNotification';
@@ -48,13 +48,13 @@ function App() {
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [bookmarks, setBookmarks] = useState(() => {
     try {
-      const raw = localStorage.getItem('voxreader_bookmarks');
+      const raw = localStorage.getItem('readora_bookmarks');
       return raw ? JSON.parse(raw) : [];
     } catch { return []; }
   });
   const [notes, setNotes] = useState(() => {
     try {
-      const raw = localStorage.getItem('voxreader_notes');
+      const raw = localStorage.getItem('readora_notes');
       return raw ? JSON.parse(raw) : [];
     } catch { return []; }
   });
@@ -170,7 +170,7 @@ function App() {
   // Clean up synthesis on unmount + load history + restore progress
   useEffect(() => {
     // Load reading history on mount
-    const saved = localStorage.getItem('voxreader_history');
+    const saved = localStorage.getItem('readora_history');
     if (saved) {
       try {
         setHistory(JSON.parse(saved));
@@ -180,7 +180,7 @@ function App() {
     }
 
     // Restore saved reading progress on mount
-    const savedProgress = localStorage.getItem('voxreader_progress');
+    const savedProgress = localStorage.getItem('readora_progress');
     if (savedProgress) {
       try {
         const p = JSON.parse(savedProgress);
@@ -260,7 +260,7 @@ function App() {
         currentWordIndex,
         rate
       };
-      localStorage.setItem('voxreader_progress', JSON.stringify(progressData));
+      localStorage.setItem('readora_progress', JSON.stringify(progressData));
 
       // Update real-time progress percentage in Personal Library metadata list
       setHistory(prev => {
@@ -271,7 +271,7 @@ function App() {
             const updated = prev.map(item =>
               item.fileName === fileName ? { ...item, progress: pagePct, date: new Date().toISOString() } : item
             );
-            try { localStorage.setItem('voxreader_history', JSON.stringify(updated)); } catch {}
+            try { localStorage.setItem('readora_history', JSON.stringify(updated)); } catch {}
             return updated;
           }
         }
@@ -391,7 +391,7 @@ function App() {
       }
       updated = updated.slice(0, 50); // limit to 50 logs
       try {
-        localStorage.setItem('voxreader_history', JSON.stringify(updated));
+        localStorage.setItem('readora_history', JSON.stringify(updated));
       } catch (err) {
         console.error("Failed to save history to localStorage:", err);
       }
@@ -441,7 +441,8 @@ function App() {
           
           // Dynamically load PDF.js only when a PDF is selected
           const pdfjsLib = await import('pdfjs-dist');
-          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js`;
+          const pdfjsWorker = await import('pdfjs-dist/build/pdf.worker.min.js?url');
+          pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker.default;
           
           const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
           const pdf = await loadingTask.promise;
@@ -603,7 +604,7 @@ function App() {
     setImagePreview(null);
 
     // Clear saved progress from localStorage
-    localStorage.removeItem('voxreader_progress');
+    localStorage.removeItem('readora_progress');
 
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       if (utteranceRef.current) {
@@ -757,7 +758,7 @@ function App() {
         }, 100);
       } else {
         speak(currentWordIndex >= 0 ? currentWordIndex : 0);
-        addToast('Audiobook reading started!', 'success');
+        addToast('Reading playback started!', 'success');
       }
     }
   };
@@ -799,7 +800,7 @@ function App() {
 
   const handleWordClick = (index, demoText = null) => {
     if (demoText) {
-      handleTextLoaded(demoText, 'VoxReader Demo.txt');
+      handleTextLoaded(demoText, 'Readora Demo.txt');
       return;
     }
 
@@ -823,7 +824,7 @@ function App() {
 
   const handleClearHistory = async () => {
     setHistory([]);
-    localStorage.removeItem('voxreader_history');
+    localStorage.removeItem('readora_history');
     try {
       await clearAllDocuments();
     } catch (err) {
@@ -833,7 +834,7 @@ function App() {
   };
 
   const handleResetProgress = () => {
-    localStorage.removeItem('voxreader_progress');
+    localStorage.removeItem('readora_progress');
     setReadingSeconds(0);
     if (pages.length > 0) {
       setCurrentPage(0);
@@ -882,7 +883,7 @@ function App() {
       const updated = prev.map(item =>
         item.id === id ? { ...item, isFavorite: !item.isFavorite } : item
       );
-      try { localStorage.setItem('voxreader_history', JSON.stringify(updated)); } catch {}
+      try { localStorage.setItem('readora_history', JSON.stringify(updated)); } catch {}
       return updated;
     });
     addToast('Favorite status updated!', 'success');
@@ -891,7 +892,7 @@ function App() {
   const handleDeleteHistoryItem = async (id) => {
     setHistory(prev => {
       const updated = prev.filter(item => item.id !== id);
-      try { localStorage.setItem('voxreader_history', JSON.stringify(updated)); } catch {}
+      try { localStorage.setItem('readora_history', JSON.stringify(updated)); } catch {}
       return updated;
     });
     try {
@@ -939,7 +940,7 @@ function App() {
         next = [...prev, bm];
         addToast(`Bookmarked page ${currentPage + 1}`, 'success');
       }
-      try { localStorage.setItem('voxreader_bookmarks', JSON.stringify(next)); } catch {}
+      try { localStorage.setItem('readora_bookmarks', JSON.stringify(next)); } catch {}
       return next;
     });
   };
@@ -947,13 +948,13 @@ function App() {
   // Keep notes in sync when panel modifies them (panel uses its own localStorage writes)
   const refreshNotesFromStorage = () => {
     try {
-      const raw = localStorage.getItem('voxreader_notes');
+      const raw = localStorage.getItem('readora_notes');
       setNotes(raw ? JSON.parse(raw) : []);
     } catch {}
   };
   const refreshBookmarksFromStorage = () => {
     try {
-      const raw = localStorage.getItem('voxreader_bookmarks');
+      const raw = localStorage.getItem('readora_bookmarks');
       setBookmarks(raw ? JSON.parse(raw) : []);
     } catch {}
   };
@@ -980,13 +981,13 @@ function App() {
           <div className="text-left space-y-2 max-w-2xl">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/10 px-3 py-1 text-xs font-semibold text-violet-400 ring-1 ring-violet-500/20">
               <Sparkles className="h-3.5 w-3.5" />
-              <span>Convert Documents to Audiobooks</span>
+              <span>Transform Documents into Audio</span>
             </div>
             <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white leading-tight">
               Listen to books seamlessly.
             </h2>
             <p className="text-sm text-slate-400 leading-relaxed font-normal">
-              VoxReader processes files purely in your browser, preserving privacy. It highlights words live and synchronizes reading seamlessly.
+              Readora processes files purely in your browser, preserving privacy. It highlights words live and synchronizes reading seamlessly.
             </p>
           </div>
         </div>

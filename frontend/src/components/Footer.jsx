@@ -9,7 +9,7 @@ export default function Footer() {
           {/* Description column */}
           <div className="space-y-4 md:col-span-1">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-white tracking-wider">VoxReader</span>
+              <span className="text-sm font-bold text-white tracking-wider">Readora</span>
               <span className="inline-flex items-center rounded-md bg-violet-500/10 px-2 py-0.5 text-[10px] font-semibold text-violet-400 ring-1 ring-inset ring-violet-500/20">
                 AI
               </span>

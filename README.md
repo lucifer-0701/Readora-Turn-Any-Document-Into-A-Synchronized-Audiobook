@@ -1,6 +1,6 @@
-# VoxReader AI — Intelligent Reading & Audiobook System
+# Readora — Transform Documents into Interactive Audio Experiences
 
-VoxReader AI is a high-performance, browser-native, private audiobook companion designed to extract text from images, documents, and PDFs entirely in the client browser (no server storage, 100% private) and read it aloud with real-time synchronized word highlighting.
+Readora is a high-performance, browser-native, private reading companion designed to extract text from images, documents, and PDFs entirely in the client browser (no server storage, 100% private) and read it aloud with real-time synchronized word highlighting.
 
 This project is fully optimized, accessible, structured, and ready to be deployed directly to Cloudflare Pages.
 
@@ -11,7 +11,7 @@ This project is fully optimized, accessible, structured, and ready to be deploye
 1. **Client-Side OCR (Tesseract.js)**: Drag, drop or select images containing text, and parse them completely in-browser. Features a live percentage loading spinner.
 2. **Offline PDF Parsing (PDF.js)**: Instantly read multipage PDF files locally. Progress is reported page-by-page.
 3. **Smart Page Pagination**: Multi-page documents are parsed, paginated, and split logically to prevent broken mid-sentence jumps.
-4. **Natural Speech Control (Web Speech API)**: Play, Pause, Resume, Stop, and control speed rates (1.0x $\rightarrow$ 2.0x) with clear, high-fidelity browser voice synthesizers.
+4. **Natural Speech Control (Web Speech API)**: Play, Pause, Resume, Stop, and control speed rates (1.0x → 2.0x) with clear, high-fidelity browser voice synthesizers.
 5. **Synchronized Word-by-Word Highlight**: High-performance, low-latency ambient visual highlighting follows along with the voice.
 6. **Reading Progress Persistence**: Saves and restores your active document, page, playback rate, and last-read word index upon reload. Includes a master Reset option.
 7. **Reading History logs**: Slide-over Sidebar library logs files processed, dates, and total counts.
@@ -50,7 +50,7 @@ project-root/
 │   │   │   ├── HistorySidebar.jsx  # Slide-over sidebar for logs
 │   │   │   ├── TextDisplay.jsx     # Spoken highlights & pagination board
 │   │   │   ├── UploadSection.jsx   # Drag-drop panel & paste terminal
-│   │   │   └── WelcomeScreen.jsx   # Blurred glassmorphism viva landing screen
+│   │   │   └── WelcomeScreen.jsx   # Blurred glassmorphism landing screen
 │   │   │
 │   │   ├── styles/           # Standard HSL stylesheets
 │   │   │   ├── index.css     # Main Tailwind overrides & glass classes
@@ -114,4 +114,4 @@ Set up and launch the application locally in seconds:
    * **Build output directory**: `dist`
 3. Click **Save and Deploy**!
 
-For detailed step-by-step instructions, troubleshooting tips, and custom domain setup, refer to the [deployment-guide.md](file:///home/abdul/Documents/AI-assisted%20intelligent%20reading%20system/deployment-guide.md).
+For detailed step-by-step instructions, troubleshooting tips, and custom domain setup, refer to the [deployment-guide.md](deployment-guide.md).

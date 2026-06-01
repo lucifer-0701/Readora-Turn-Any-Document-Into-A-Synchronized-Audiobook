@@ -1,6 +1,6 @@
-# VoxReader AI — Production Deployment Guide
+# Readora — Production Deployment Guide
 
-This guide details step-by-step instructions for deploying the **VoxReader AI** audiobook application to **Cloudflare Pages** for global distribution with high speed and zero server latency.
+This guide details step-by-step instructions for deploying the **Readora** application to **Cloudflare Pages** for global distribution with high speed and zero server latency.
 
 ---
 
@@ -37,8 +37,8 @@ Cloudflare Pages provides fully automated, git-integrated CI/CD. Every time you 
 ### Step 1: Connect your Repository
 1. Log in to the [Cloudflare Dashboard](https://dash.cloudflare.com/).
 2. Navigate to the left sidebar and click **Workers & Pages**.
-3. Select the **Pages** tab and click **Create a project** $\rightarrow$ **Connect to Git**.
-4. Authorize Cloudflare to access your GitHub account and select your `AI-assisted-intelligent-reading-system` repository.
+3. Select the **Pages** tab and click **Create a project** → **Connect to Git**.
+4. Authorize Cloudflare to access your GitHub account and select your repository.
 
 ### Step 2: Configure Build Settings
 Under the **Build settings** section, supply the following values:
@@ -52,19 +52,19 @@ Under the **Build settings** section, supply the following values:
 
 ### Step 3: Define Environment Variables (Optional)
 If you wish to customize defaults during build time, click **Environment variables (advanced)** and define:
-* `VITE_APP_TITLE` $\rightarrow$ `"VoxReader AI"`
-* `VITE_DEFAULT_LANG` $\rightarrow$ `"en-US"`
+* `VITE_APP_TITLE` → `"Readora"`
+* `VITE_DEFAULT_LANG` → `"en-US"`
 
 ### Step 4: Click Save and Deploy!
-* Cloudflare Pages will spin up a build container, execute `npm run build`, and publish your application to a free custom sub-domain (e.g. `voxreader-ai.pages.dev`).
+* Cloudflare Pages will spin up a build container, execute `npm run build`, and publish your application to a free custom sub-domain (e.g. `readora.pages.dev`).
 
 ---
 
 ## 📁 Single-Page Application (SPA) Deep Link Redirects
 
-Because VoxReader is a client-side React SPA, direct browser refreshes on sub-paths can trigger `404 Not Found` errors in normal cloud hosts.
+Because Readora is a client-side React SPA, direct browser refreshes on sub-paths can trigger `404 Not Found` errors in normal cloud hosts.
 
-To resolve this, we configured a standard routing fallback file in [public/_redirects](file:///home/abdul/Documents/AI-assisted%20intelligent%20reading%20system/frontend/public/_redirects):
+To resolve this, we configured a standard routing fallback file in `public/_redirects`:
 ```text
 /*   /index.html   200
 ```
@@ -78,7 +78,7 @@ If you prefer to deploy directly from your local terminal without linking your G
 
 ```bash
 # 1. Install Wrangler globally or run via npx
-npx wrangler pages deploy frontend/dist --project-name=voxreader-ai
+npx wrangler pages deploy frontend/dist --project-name=readora
 ```
 
 ---
@@ -89,7 +89,7 @@ npx wrangler pages deploy frontend/dist --project-name=voxreader-ai
 * **Fix**: Ensure the **Root directory** in Cloudflare build settings is explicitly set to `frontend`. Cloudflare must build from within the subdirectory, not the workspace root.
 
 ### Q2: PDF parsing or Tesseract OCR doesn't load files.
-* **Fix**: VoxReader runs 100% locally in the browser for privacy. If external assets fail to download, make sure your browser is connected to the internet to load the CDN worker resources, or allow permissions on the console.
+* **Fix**: Readora runs 100% locally in the browser for privacy. If external assets fail to download, make sure your browser is connected to the internet to load any required resources, or allow permissions on the console.
 
 ### Q3: How do I configure a custom domain?
-* **Fix**: Go to the Cloudflare Pages dashboard $\rightarrow$ Select your Project $\rightarrow$ Navigate to the **Custom domains** tab $\rightarrow$ click **Set up a custom domain** and enter your domain name (e.g. `audiobook.yourname.com`). Cloudflare will automatically provision SSL certificates and update DNS records!
+* **Fix**: Go to the Cloudflare Pages dashboard → Select your Project → Navigate to the **Custom domains** tab → click **Set up a custom domain** and enter your domain name (e.g. `reader.yourname.com`). Cloudflare will automatically provision SSL certificates and update DNS records!

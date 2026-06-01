@@ -1,5 +1,5 @@
 {
-  "name": "ai-assisted-intelligent-reading-system",
+  "name": "readora",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,7 +13,6 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
-    "firebase": "^10.7.0",
     "framer-motion": "^12.40.0",
     "lucide-react": "^1.16.0",
     "pdfjs-dist": "^3.4.120",

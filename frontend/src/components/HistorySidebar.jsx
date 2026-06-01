@@ -5,16 +5,12 @@ import {
   Calendar,
   FileText,
   Trash2,
-  Clock,
   Search,
   ArrowUpDown,
   Star,
   BookOpen,
   FileImage,
-  Layers,
-  ChevronRight,
-  TrendingUp,
-  BookmarkCheck
+  TrendingUp
 } from 'lucide-react';
 
 export default function HistorySidebar({

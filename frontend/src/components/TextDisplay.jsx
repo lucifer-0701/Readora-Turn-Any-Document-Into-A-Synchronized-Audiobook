@@ -424,7 +424,7 @@ const TextDisplay = React.memo(function TextDisplay({
               whileTap={{ scale: 0.96 }}
               onClick={() => {
                 const sample =
-                  'Welcome to VoxReader! This is a state-of-the-art AI Audiobook player that reads text to you directly in your browser. Upload your favorite PDF or paste any article, select a natural AI voice, adjust the speed controls, and enjoy hands-free reading. Try clicking words in the reader panel to jump straight to any point in the speech!';
+                  'Welcome to Readora! This is a state-of-the-art document reader that transforms your text into interactive audio experiences directly in your browser. Upload your favorite PDF or paste any article, select a natural voice, adjust the speed controls, and enjoy hands-free reading. Try clicking words in the reader panel to jump straight to any point in the speech!';
                 onWordClick && onWordClick(-2, sample);
               }}
               className="inline-flex items-center gap-2 rounded-xl bg-violet-600/10 hover:bg-violet-600/20 border border-violet-500/25 px-6 py-3 text-sm font-semibold text-violet-400 hover:text-violet-300 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all shadow-sm"

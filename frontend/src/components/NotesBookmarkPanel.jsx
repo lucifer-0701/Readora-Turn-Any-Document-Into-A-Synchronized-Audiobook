@@ -18,8 +18,8 @@ import {
 } from 'lucide-react';
 
 // ─── Storage helpers ───────────────────────────────────────────────────────────
-const LS_BOOKMARKS = 'voxreader_bookmarks';
-const LS_NOTES = 'voxreader_notes';
+const LS_BOOKMARKS = 'readora_bookmarks';
+const LS_NOTES = 'readora_notes';
 
 function loadLS(key) {
   try {

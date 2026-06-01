@@ -56,7 +56,7 @@ const AudioControls = React.memo(function AudioControls({
         aria-valuenow={Math.round(progress)}
         aria-valuemin="0"
         aria-valuemax="100"
-        aria-label="Audiobook playback progress"
+        aria-label="Reading playback progress"
       >
         <motion.div
           className="h-full bg-gradient-to-r from-violet-600 via-indigo-500 to-cyan-400"
@@ -159,7 +159,7 @@ const AudioControls = React.memo(function AudioControls({
                       : 'bg-gradient-to-tr from-violet-600 to-indigo-600 shadow-violet-500/25 ring-1 ring-violet-400/20'
                   }`}
                   title={isPlaying ? 'Pause' : speechStatus === 'paused' ? 'Resume' : 'Play'}
-                  aria-label={isPlaying ? 'Pause audiobook playback' : 'Start audiobook playback'}
+                  aria-label={isPlaying ? 'Pause reading playback' : 'Start reading playback'}
                 >
                   <AnimatePresence mode="wait">
                     {isPlaying ? (
@@ -193,7 +193,7 @@ const AudioControls = React.memo(function AudioControls({
                 onClick={onStop}
                 className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all duration-200 disabled:opacity-30 disabled:pointer-events-none"
                 title="Stop Playing"
-                aria-label="Stop audiobook playback"
+                aria-label="Stop reading playback"
               >
                 <Square className="h-3.5 w-3.5" aria-hidden="true" />
               </button>

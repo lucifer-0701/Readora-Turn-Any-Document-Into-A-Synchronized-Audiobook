@@ -173,7 +173,7 @@ export default function WelcomeScreen({ onGetStarted }) {
                 <Headphones className="h-5 w-5" />
               </div>
               <h1 className="text-lg font-bold tracking-tight text-white flex items-center gap-1.5 m-0 leading-none">
-                VoxReader
+                Readora
                 <span className="inline-flex items-center rounded-md bg-violet-500/10 px-1.5 py-0.5 text-[10px] font-bold text-violet-400 ring-1 ring-inset ring-violet-500/20">
                   AI
                 </span>
@@ -234,7 +234,7 @@ export default function WelcomeScreen({ onGetStarted }) {
               transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
               className="max-w-2xl mx-auto text-base sm:text-lg text-slate-400 leading-relaxed font-normal"
             >
-              Upload images, scan PDFs, or paste raw text. VoxReader extracts the elements with local OCR, then reads them aloud with real-time word highlighting. Completely offline.
+              Upload images, scan PDFs, or paste raw text. Readora extracts the elements with local OCR, then reads them aloud with real-time word highlighting. Completely offline.
             </motion.p>
 
             {/* Hero CTAs */}
@@ -290,7 +290,7 @@ export default function WelcomeScreen({ onGetStarted }) {
             {/* Mockup content area simulating active reading */}
             <div className="text-left space-y-6 px-2 py-4">
               <div className="space-y-3 leading-[1.8] text-sm sm:text-base font-light text-slate-400">
-                <span className="text-slate-500">VoxReader converts document elements locally.</span>{' '}
+                <span className="text-slate-500">Readora converts document elements locally.</span>{' '}
                 <span className="bg-gradient-to-r from-violet-500/15 to-indigo-500/15 border-l-2 border-violet-500 pl-2 rounded-r py-1 text-slate-300">
                   Try clicking words in the reader board to{' '}
                   <span className="bg-gradient-to-r from-violet-500 to-indigo-500 text-white font-semibold px-1 rounded shadow-lg shadow-violet-500/30 ring-1 ring-violet-400/20 scale-105 inline-block">
@@ -341,7 +341,7 @@ export default function WelcomeScreen({ onGetStarted }) {
             <div className="space-y-3">
               <h3 className="text-2xl sm:text-3xl font-extrabold text-white">Engineered for Privacy & Efficiency</h3>
               <p className="text-xs sm:text-sm text-slate-500 max-w-lg mx-auto leading-relaxed">
-                By combining client-side execution frameworks with the Web Speech API, VoxReader loads documents locally without servers.
+                By combining client-side execution frameworks with the Web Speech API, Readora loads documents locally without servers.
               </p>
             </div>
 
@@ -412,7 +412,7 @@ export default function WelcomeScreen({ onGetStarted }) {
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-violet-600 to-indigo-600 text-white shadow-md">
                   <Headphones className="h-4 w-4" />
                 </div>
-                <span className="text-base font-bold text-white tracking-tight">VoxReader</span>
+                <span className="text-base font-bold text-white tracking-tight">Readora</span>
               </div>
               <p className="text-xs text-slate-500 leading-relaxed max-w-xs">
                 Private, serverless document text-to-speech converter using client-side OCR model architectures.
@@ -456,9 +456,9 @@ export default function WelcomeScreen({ onGetStarted }) {
               Academic Research Project · AI-Assisted Intelligent Reading System · {new Date().getFullYear()}
             </p>
             <div className="flex items-center gap-4">
-              <span>Client Sandbox Sandbox</span>
+              <span>Client Sandbox</span>
               <span>•</span>
-              <span>VoxReader v1.1.0</span>
+              <span>Readora v2.0.0</span>
             </div>
           </div>
         </div>

@@ -3,7 +3,7 @@
  *
  * DATA ARCHITECTURE
  * ─────────────────
- * All data lives in a single localStorage key: "voxreader_analytics"
+ * All data lives in a single localStorage key: "readora_analytics"
  *
  * Shape:
  * {
@@ -32,9 +32,13 @@
  *   resetAnalytics()           → clears all data
  */
 
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 
-const LS_KEY = 'voxreader_analytics';
+const LS_KEY = 'readora_analytics';
+
+let cache = null;
+let pendingSaveTimeout = null;
+let lastSaveTime = 0;
 
 function today() {
   return new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
@@ -49,11 +53,49 @@ function load() {
   }
 }
 
+function flush() {
+  if (cache) {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(cache));
+      lastSaveTime = Date.now();
+      if (pendingSaveTimeout) {
+        clearTimeout(pendingSaveTimeout);
+        pendingSaveTimeout = null;
+      }
+    } catch (e) {
+      console.error('Analytics save failed', e);
+    }
+  }
+}
+
 function save(data) {
-  try {
-    localStorage.setItem(LS_KEY, JSON.stringify(data));
-  } catch (e) {
-    console.error('Analytics save failed', e);
+  cache = data;
+  const now = Date.now();
+  
+  if (pendingSaveTimeout) {
+    clearTimeout(pendingSaveTimeout);
+  }
+
+  // Throttle to save immediately if last write was more than 5 seconds ago
+  if (now - lastSaveTime > 5000) {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(cache));
+      lastSaveTime = now;
+      pendingSaveTimeout = null;
+    } catch (e) {
+      console.error('Analytics save failed', e);
+    }
+  } else {
+    // Otherwise, debounce the write by 2 seconds
+    pendingSaveTimeout = setTimeout(() => {
+      try {
+        localStorage.setItem(LS_KEY, JSON.stringify(cache));
+        lastSaveTime = Date.now();
+        pendingSaveTimeout = null;
+      } catch (e) {
+        console.error('Analytics save failed', e);
+      }
+    }, 2000);
   }
 }
 
@@ -74,7 +116,10 @@ function defaults() {
 }
 
 function getOrCreate() {
-  return load() || defaults();
+  if (!cache) {
+    cache = load() || defaults();
+  }
+  return cache;
 }
 
 /** Calculate streak from weeklyActivity map */
@@ -121,6 +166,17 @@ export default function useAnalytics() {
     fileName: '',
     pagesRead: 0,
   });
+
+  // Flush any pending disk writes on tab close / reload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      flush();
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
 
   const trackSessionStart = useCallback(() => {
     const data = getOrCreate();

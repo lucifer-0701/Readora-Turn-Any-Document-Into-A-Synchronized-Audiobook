@@ -11,14 +11,28 @@ export default defineConfig({
     },
   },
   build: {
+    target: 'es2022',
+    minify: 'esbuild',
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          if (id.includes('tesseract.js')) {
-            return 'tesseract'
-          }
-          if (id.includes('pdfjs-dist')) {
-            return 'pdfjs'
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
+              return 'react';
+            }
+            if (id.includes('pdfjs-dist')) {
+              return 'pdf';
+            }
+            if (id.includes('tesseract.js') || id.includes('tesseract.js-core')) {
+              return 'ocr';
+            }
+            if (id.includes('recharts') || id.includes('d3-') || id.includes('victory-')) {
+              return 'charts';
+            }
+            if (id.includes('framer-motion') || id.includes('motion-dom') || id.includes('motion-utils')) {
+              return 'motion';
+            }
           }
         }
       }

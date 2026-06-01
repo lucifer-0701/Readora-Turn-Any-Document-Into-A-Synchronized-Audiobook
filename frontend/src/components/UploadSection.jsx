@@ -224,7 +224,7 @@ const UploadSection = React.memo(function UploadSection({
                   Drag and drop your file here
                 </h3>
                 <p className="mt-1.5 text-xs text-slate-400 max-w-sm">
-                  Select a document to begin. VoxReader converts it locally into a synchronized audiobook.
+                  Select a document to begin. Readora converts it locally into a synchronized audio experience.
                 </p>
                 
                 {/* File Type Badges */}

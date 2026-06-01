@@ -24,12 +24,12 @@ const Header = React.memo(function Header({
             </div>
             <div>
               <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white flex items-center gap-1.5 m-0 leading-none">
-                <span>VoxReader</span>
+                <span>Readora</span>
                 <span className="inline-flex items-center rounded-md bg-violet-500/10 px-2 py-0.5 text-[10px] sm:text-xs font-medium text-violet-400 ring-1 ring-inset ring-violet-500/20">
                   AI
                 </span>
               </h1>
-              <p className="text-[10px] sm:text-xs text-slate-400 mt-1 sm:mt-0.5">Intelligent Companion</p>
+              <p className="text-[10px] sm:text-xs text-slate-400 mt-1 sm:mt-0.5">Interactive Audio Experiences</p>
             </div>
           </div>
 

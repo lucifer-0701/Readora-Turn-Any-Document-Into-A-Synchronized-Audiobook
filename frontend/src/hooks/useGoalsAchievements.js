@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
-const GOALS_LS_KEY = 'voxreader_goals';
-const UNLOCKED_LS_KEY = 'voxreader_unlocked_achievements';
+const GOALS_LS_KEY = 'readora_goals';
+const UNLOCKED_LS_KEY = 'readora_unlocked_achievements';
 
 const DEFAULT_GOALS = {
   daily: 15, // in minutes

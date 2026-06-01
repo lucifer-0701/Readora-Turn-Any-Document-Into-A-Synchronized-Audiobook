@@ -1,7 +1,7 @@
 // Library database utility using IndexedDB for high-capacity document storage.
 // This prevents localStorage quota exceeded errors when storing large text blocks or full books.
 
-const DB_NAME = 'voxreader_library_db';
+const DB_NAME = 'readora_library_db';
 const DB_VERSION = 1;
 const STORE_NAME = 'documents';
 
