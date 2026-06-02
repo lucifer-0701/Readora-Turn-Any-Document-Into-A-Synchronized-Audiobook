@@ -1,7 +1,7 @@
 import React from 'react';
 import { Sparkles } from 'lucide-react';
 
-export default function Footer() {
+const Footer = React.memo(function Footer() {
   return (
     <footer className="glass-panel border-t border-slate-900 bg-slate-950/40 pt-12 pb-6 mt-16 text-left" role="contentinfo">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -61,4 +61,6 @@ export default function Footer() {
       </div>
     </footer>
   );
-}
+});
+
+export default Footer;

@@ -141,9 +141,15 @@ export default function useGoalsAchievements(analytics, history, bookmarks, onAc
     }
   }, [analytics, history, bookmarks, unlockedIds, onAchievementUnlock]);
 
-  // Run achievement checks when stats change
+  // Run achievement checks when stats change — deferred to idle time
   useEffect(() => {
-    checkAchievements();
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      const handle = window.requestIdleCallback(() => checkAchievements());
+      return () => window.cancelIdleCallback(handle);
+    } else {
+      const timer = setTimeout(checkAchievements, 1000);
+      return () => clearTimeout(timer);
+    }
   }, [checkAchievements]);
 
   // Compute goals progress

@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play,
   Pause,
@@ -42,7 +41,8 @@ const AudioControls = React.memo(function AudioControls({
 
   return (
     <section
-      className="fixed bottom-0 left-0 right-0 z-50"
+      className="fixed bottom-0 left-0 right-0 z-50 animate-fade-in"
+      style={{ animationDuration: '0.4s' }}
       aria-labelledby="audio-controls-title"
     >
       <h2 id="audio-controls-title" className="sr-only">
@@ -58,12 +58,12 @@ const AudioControls = React.memo(function AudioControls({
         aria-valuemax="100"
         aria-label="Reading playback progress"
       >
-        <motion.div
-          className="h-full bg-gradient-to-r from-violet-600 via-indigo-500 to-cyan-400"
-          style={{ boxShadow: '0 0 10px rgba(139, 92, 246, 0.5)' }}
-          initial={false}
-          animate={{ width: `${progress}%` }}
-          transition={{ ease: 'easeOut', duration: 0.3 }}
+        <div
+          className="h-full bg-gradient-to-r from-violet-600 via-indigo-500 to-cyan-400 transition-all duration-300 ease-out"
+          style={{ 
+            width: `${progress}%`,
+            boxShadow: '0 0 10px rgba(139, 92, 246, 0.5)' 
+          }}
         />
       </div>
 
@@ -126,7 +126,7 @@ const AudioControls = React.memo(function AudioControls({
               <button
                 disabled={disabled}
                 onClick={onPrev}
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all duration-200 disabled:opacity-30 disabled:pointer-events-none"
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all duration-200 disabled:opacity-30 disabled:pointer-events-none active:scale-90"
                 title="Previous Sentence"
                 aria-label="Go back five words"
               >
@@ -136,24 +136,18 @@ const AudioControls = React.memo(function AudioControls({
               {/* Central Play / Pause — animated button */}
               <div className="relative">
                 {/* Pulsing ring when playing */}
-                <AnimatePresence>
-                  {isPlaying && (
-                    <motion.div
-                      initial={{ scale: 1, opacity: 0.5 }}
-                      animate={{ scale: 1.5, opacity: 0 }}
-                      transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
-                      className="absolute inset-0 rounded-2xl bg-violet-500/20"
-                      aria-hidden="true"
-                    />
-                  )}
-                </AnimatePresence>
+                {isPlaying && (
+                  <div
+                    className="absolute inset-0 rounded-2xl bg-violet-500/20 animate-ping pointer-events-none"
+                    style={{ animationDuration: '2s' }}
+                    aria-hidden="true"
+                  />
+                )}
 
-                <motion.button
+                <button
                   disabled={disabled}
                   onClick={onPlayPause}
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.92 }}
-                  className={`relative flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl text-white shadow-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-30 disabled:pointer-events-none ${
+                  className={`relative flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl text-white shadow-xl focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-30 disabled:pointer-events-none transition-all duration-200 active:scale-95 hover:scale-105 ${
                     isPlaying
                       ? 'bg-gradient-to-tr from-amber-500 to-orange-600 shadow-orange-500/25 ring-1 ring-orange-400/20'
                       : 'bg-gradient-to-tr from-violet-600 to-indigo-600 shadow-violet-500/25 ring-1 ring-violet-400/20'
@@ -161,37 +155,19 @@ const AudioControls = React.memo(function AudioControls({
                   title={isPlaying ? 'Pause' : speechStatus === 'paused' ? 'Resume' : 'Play'}
                   aria-label={isPlaying ? 'Pause reading playback' : 'Start reading playback'}
                 >
-                  <AnimatePresence mode="wait">
-                    {isPlaying ? (
-                      <motion.div
-                        key="pause"
-                        initial={{ scale: 0.6, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.6, opacity: 0 }}
-                        transition={{ duration: 0.15 }}
-                      >
-                        <Pause className="h-5 w-5 sm:h-6 sm:w-6 fill-white" aria-hidden="true" />
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="play"
-                        initial={{ scale: 0.6, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.6, opacity: 0 }}
-                        transition={{ duration: 0.15 }}
-                      >
-                        <Play className="h-5 w-5 sm:h-6 sm:w-6 fill-white ml-0.5" aria-hidden="true" />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.button>
+                  {isPlaying ? (
+                    <Pause className="h-5 w-5 sm:h-6 sm:w-6 fill-white" aria-hidden="true" />
+                  ) : (
+                    <Play className="h-5 w-5 sm:h-6 sm:w-6 fill-white ml-0.5" aria-hidden="true" />
+                  )}
+                </button>
               </div>
 
               {/* Stop */}
               <button
                 disabled={disabled}
                 onClick={onStop}
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all duration-200 disabled:opacity-30 disabled:pointer-events-none"
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all duration-200 disabled:opacity-30 disabled:pointer-events-none active:scale-90"
                 title="Stop Playing"
                 aria-label="Stop reading playback"
               >
@@ -202,7 +178,7 @@ const AudioControls = React.memo(function AudioControls({
               <button
                 disabled={disabled}
                 onClick={onNext}
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all duration-200 disabled:opacity-30 disabled:pointer-events-none"
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all duration-200 disabled:opacity-30 disabled:pointer-events-none active:scale-90"
                 title="Next Sentence"
                 aria-label="Skip forward five words"
               >
@@ -240,7 +216,7 @@ const AudioControls = React.memo(function AudioControls({
                     onClick={() => onRateChange(speed)}
                     role="radio"
                     aria-checked={rate === speed}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-bold focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all duration-200 disabled:opacity-30 disabled:pointer-events-none ${
+                    className={`px-2 py-1 rounded-lg text-[10px] font-bold focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all duration-200 disabled:opacity-30 disabled:pointer-events-none active:scale-95 hover:scale-105 ${
                       rate === speed
                         ? 'bg-violet-600 text-white shadow-md shadow-violet-500/20 ring-1 ring-violet-400/30 scale-105'
                         : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:border-slate-700 hover:text-slate-200'
@@ -264,7 +240,7 @@ const AudioControls = React.memo(function AudioControls({
               {!disabled && (
                 <button
                   onClick={onResetProgress}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900/80 hover:bg-slate-800 text-slate-500 hover:text-slate-300 border border-slate-800 hover:border-slate-700 transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900/80 hover:bg-slate-800 text-slate-500 hover:text-slate-300 border border-slate-800 hover:border-slate-700 transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-violet-500 active:scale-90"
                   title="Reset progress"
                   aria-label="Reset saved reading progress"
                 >

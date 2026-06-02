@@ -1,10 +1,8 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { 
   Headphones, 
   FileText, 
   Mic2, 
-  Zap, 
   Shield, 
   BookOpen, 
   Sparkles,
@@ -15,8 +13,8 @@ import {
   Globe,
   ChevronRight,
   Play,
-  RotateCcw,
-  Languages
+  Languages,
+  Zap
 } from 'lucide-react';
 
 const FEATURES = [
@@ -71,82 +69,16 @@ const METRICS = [
   { value: 'Free', label: 'Open-Access Tools' }
 ];
 
-// Framer motion variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2
-    }
-  }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 25 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] }
-  }
-};
-
-const pulseGlow = {
-  animate: {
-    scale: [1, 1.05, 1],
-    opacity: [0.5, 0.8, 0.5],
-    transition: {
-      duration: 3,
-      repeat: Infinity,
-      ease: 'easeInOut'
-    }
-  }
-};
-
 export default function WelcomeScreen({ onGetStarted }) {
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-violet-500/30 overflow-x-hidden relative">
 
       {/* ══════════════ Background Aesthetic Elements ══════════════ */}
-      {/* Drifting glowing radial background orbs */}
+      {/* Drifting glowing radial background orbs using high-performance CSS animations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        <motion.div 
-          animate={{
-            y: [0, -35, 0],
-            x: [0, 20, 0],
-          }}
-          transition={{
-            duration: 15,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-          className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-violet-600/10 blur-[130px]" 
-        />
-        <motion.div 
-          animate={{
-            y: [0, 45, 0],
-            x: [0, -25, 0],
-          }}
-          transition={{
-            duration: 18,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-          className="absolute top-1/4 -right-32 w-[500px] h-[500px] rounded-full bg-indigo-600/10 blur-[110px]" 
-        />
-        <motion.div 
-          animate={{
-            y: [0, -25, 0],
-            x: [0, -30, 0],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-          className="absolute -bottom-40 left-1/3 w-[550px] h-[550px] rounded-full bg-cyan-600/8 blur-[120px]" 
-        />
+        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-violet-600/10 blur-[130px] animate-float-slow" />
+        <div className="absolute top-1/4 -right-32 w-[500px] h-[500px] rounded-full bg-indigo-600/10 blur-[110px] animate-float-slower" />
+        <div className="absolute -bottom-40 left-1/3 w-[550px] h-[550px] rounded-full bg-cyan-600/8 blur-[120px] animate-float-even" />
       </div>
 
       {/* Futuristic Grid Pattern Overlay */}
@@ -184,15 +116,13 @@ export default function WelcomeScreen({ onGetStarted }) {
                 <Globe className="h-3 w-3 text-emerald-400" />
                 <span>Local Sandbox</span>
               </span>
-              <motion.button 
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
+              <button 
                 onClick={onGetStarted}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-violet-600/20 transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-violet-600/20 active:scale-95 hover:scale-105 transition-all duration-200 cursor-pointer"
               >
                 <span>Launch App</span>
                 <ArrowRight className="h-3.5 w-3.5" />
-              </motion.button>
+              </button>
             </div>
           </div>
         </div>
@@ -205,69 +135,42 @@ export default function WelcomeScreen({ onGetStarted }) {
           {/* Hero text section */}
           <div className="max-w-4xl mx-auto space-y-8">
             {/* Glowing tag badge */}
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 rounded-full bg-violet-500/10 border border-violet-500/20 px-4 py-1.5 text-xs font-bold text-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.1)] mx-auto"
-            >
+            <div className="inline-flex items-center gap-2 rounded-full bg-violet-500/10 border border-violet-500/20 px-4 py-1.5 text-xs font-bold text-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.1)] mx-auto animate-fade-in">
               <Sparkles className="h-3.5 w-3.5 text-violet-400 animate-pulse" />
               <span>Next-Gen Document Intelligence Hub</span>
-            </motion.div>
+            </div>
 
-            <motion.h2 
-              initial={{ opacity: 0, y: 25 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-              className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.1]"
-            >
+            <h2 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.1] animate-fade-in">
               Turn any document into a
               <br />
               <span className="bg-gradient-to-r from-violet-400 via-indigo-400 to-cyan-400 bg-clip-text text-transparent">
                 synchronized audiobook.
               </span>
-            </motion.h2>
+            </h2>
 
-            <motion.p 
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-              className="max-w-2xl mx-auto text-base sm:text-lg text-slate-400 leading-relaxed font-normal"
-            >
+            <p className="max-w-2xl mx-auto text-base sm:text-lg text-slate-400 leading-relaxed font-normal animate-fade-in transition-all duration-300">
               Upload images, scan PDFs, or paste raw text. Readora extracts the elements with local OCR, then reads them aloud with real-time word highlighting. Completely offline.
-            </motion.p>
+            </p>
 
             {/* Hero CTAs */}
-            <motion.div 
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
-            >
-              <motion.button
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 animate-fade-in">
+              <button
                 onClick={onGetStarted}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 px-8 py-4 font-bold text-white shadow-xl shadow-violet-600/25 ring-1 ring-violet-400/20 transition-all group cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 px-8 py-4 font-bold text-white shadow-xl shadow-violet-600/25 ring-1 ring-violet-400/20 active:scale-95 hover:scale-[1.04] transition-all duration-200 group cursor-pointer"
               >
                 <span>Get Started Free</span>
                 <ChevronRight className="h-4.5 w-4.5 transition-transform duration-200 group-hover:translate-x-1" />
-              </motion.button>
+              </button>
 
               <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-900/40 border border-slate-800/60 rounded-xl px-4 py-2">
                 <Zap className="h-3.5 w-3.5 text-amber-400 animate-pulse" />
                 <span>No registration required · Sandbox execution</span>
               </div>
-            </motion.div>
+            </div>
           </div>
 
           {/* Interactive Simulated Reader Mockup */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="relative max-w-4xl mx-auto rounded-3xl border border-slate-800/80 bg-slate-950/60 p-4 sm:p-6 shadow-3xl overflow-hidden group"
-          >
+          <div className="relative max-w-4xl mx-auto rounded-3xl border border-slate-800/80 bg-slate-950/60 p-4 sm:p-6 shadow-3xl overflow-hidden group transition-all duration-300 hover:shadow-violet-950/10">
             {/* Visual glow element behind the mockup */}
             <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-2/3 h-24 bg-gradient-to-r from-violet-600/10 to-indigo-600/10 blur-2xl rounded-full" />
             
@@ -320,7 +223,7 @@ export default function WelcomeScreen({ onGetStarted }) {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* Metrics / Highlights Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto select-none pt-4">
@@ -345,21 +248,13 @@ export default function WelcomeScreen({ onGetStarted }) {
               </p>
             </div>
 
-            <motion.div 
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-100px" }}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left"
-            >
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
               {FEATURES.map((feature, index) => {
                 const Icon = feature.icon;
                 return (
-                  <motion.div
+                  <div
                     key={feature.title}
-                    variants={itemVariants}
-                    whileHover={{ scale: 1.02, y: -2 }}
-                    className="group relative glass-panel rounded-3xl p-6 border-slate-900 hover:border-violet-500/30 transition-all duration-300 hover:shadow-2xl overflow-hidden cursor-default"
+                    className="group relative glass-panel rounded-3xl p-6 border-slate-900 hover:border-violet-500/30 transition-all duration-300 hover:shadow-2xl overflow-hidden cursor-default hover:scale-[1.02] hover:-translate-y-0.5"
                   >
                     {/* Glowing highlight orb on card hover */}
                     <div 
@@ -378,10 +273,10 @@ export default function WelcomeScreen({ onGetStarted }) {
                         {feature.description}
                       </p>
                     </div>
-                  </motion.div>
+                  </div>
                 );
               })}
-            </motion.div>
+            </div>
           </div>
 
           {/* Tech Stack Pills Section */}
