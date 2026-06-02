@@ -45,7 +45,19 @@ const TextDisplay = React.memo(function TextDisplay({
     if (currentWordIndex >= 0 && containerRef.current) {
       const active = containerRef.current.querySelector('.word-active');
       if (active) {
-        active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const container = containerRef.current;
+        const cRect = container.getBoundingClientRect();
+        const aRect = active.getBoundingClientRect();
+        
+        // Only scroll if the active word is not already visible inside the container view
+        const isVisible = (
+          aRect.top >= cRect.top + 40 &&
+          aRect.bottom <= cRect.bottom - 40
+        );
+        
+        if (!isVisible) {
+          active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
       }
     }
   }, [currentWordIndex]);

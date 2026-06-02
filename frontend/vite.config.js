@@ -13,6 +13,12 @@ export default defineConfig({
   build: {
     target: 'es2022',
     chunkSizeWarningLimit: 1000,
+    modulePreload: {
+      resolveDependencies(filename, deps, { hostId, hostType }) {
+        // Exclude heavy non-critical manual chunks from eager startup preloading
+        return deps.filter(dep => !dep.includes('charts') && !dep.includes('motion') && !dep.includes('pdf') && !dep.includes('ocr'));
+      }
+    },
     rollupOptions: {
       output: {
         manualChunks(id) {
