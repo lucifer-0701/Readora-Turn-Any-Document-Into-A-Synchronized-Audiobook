@@ -2,7 +2,6 @@ import React from 'react';
 import {
   Play,
   Pause,
-  Square,
   ChevronLeft,
   ChevronRight,
   Gauge,
@@ -18,7 +17,7 @@ const AudioControls = React.memo(function AudioControls({
   isPlaying,
   speechStatus = 'idle',
   onPlayPause,
-  onStop,
+  onStop, // Retained for prop-signature compatibility
   rate,
   onRateChange,
   voices = [],
@@ -68,20 +67,23 @@ const AudioControls = React.memo(function AudioControls({
       </div>
 
       {/* ── Sticky glassmorphic control bar ── */}
-      <div className="bg-slate-950/85 backdrop-blur-2xl border-t border-slate-800/60">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3">
-
-          {/* Desktop: single row | Mobile: stack rows */}
-          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full">
-
-            {/* ── Left: Voice + Status ── */}
-            <div className="flex w-full sm:w-auto justify-between sm:justify-start items-center gap-3 flex-1 min-w-0 border-b sm:border-0 border-slate-800/60 pb-3 sm:pb-0">
-              {/* Status indicator */}
-              <div className="flex items-center gap-1.5 shrink-0" role="status" aria-live="polite">
+      <div className="bg-slate-950/90 backdrop-blur-2xl border-t border-slate-900/60 shadow-2xl">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
+          {/* Main flex container: stacked on mobile, inline on desktop */}
+          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6 w-full justify-between">
+            
+            {/* 1. LEFT COLUMN: Voice Select & Status Indicator */}
+            <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start min-w-0 md:max-w-xs flex-1">
+              {/* Status Badge */}
+              <div 
+                className="flex items-center gap-1.5 shrink-0 bg-slate-900/80 border border-slate-800/80 rounded-xl px-3 py-1.5 shadow-sm" 
+                role="status" 
+                aria-live="polite"
+              >
                 {isPlaying ? (
-                  <Volume2 className="h-3.5 w-3.5 text-emerald-400 animate-pulse" aria-hidden="true" />
+                  <Volume2 className="h-4 w-4 text-emerald-400 animate-pulse" aria-hidden="true" />
                 ) : (
-                  <VolumeX className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
+                  <VolumeX className="h-4 w-4 text-slate-500" aria-hidden="true" />
                 )}
                 <span className="relative flex h-2 w-2">
                   {currentStatus.ring && (
@@ -94,8 +96,8 @@ const AudioControls = React.memo(function AudioControls({
                 </span>
               </div>
 
-              {/* Voice selector */}
-              <div className="flex items-center gap-2 min-w-0 flex-1 max-w-[260px]">
+              {/* Voice Dropdown */}
+              <div className="flex items-center gap-2 min-w-0 flex-1 max-w-[200px] md:max-w-[185px]">
                 <Languages className="h-4 w-4 text-violet-400 shrink-0" aria-hidden="true" />
                 <select
                   disabled={disabled || voices.length === 0}
@@ -105,14 +107,14 @@ const AudioControls = React.memo(function AudioControls({
                     const voice = voices.find((v) => v.name === e.target.value);
                     onVoiceChange(voice);
                   }}
-                  className="w-full text-[11px] font-medium text-slate-300 bg-slate-900/80 border border-slate-800 rounded-lg px-2 py-1.5 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 outline-none transition-colors disabled:opacity-40 truncate"
+                  className="w-full text-xs font-semibold text-slate-300 bg-slate-900/80 border border-slate-800 rounded-xl px-2.5 py-1.5 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 outline-none transition-colors disabled:opacity-40 truncate"
                 >
                   {voices.length === 0 ? (
                     <option>No voices found</option>
                   ) : (
                     voices.map((voice) => (
                       <option key={voice.name} value={voice.name}>
-                        {voice.name} ({voice.lang})
+                        {voice.name}
                       </option>
                     ))
                   )}
@@ -120,73 +122,59 @@ const AudioControls = React.memo(function AudioControls({
               </div>
             </div>
 
-            {/* ── Center: Playback controls ── */}
-            <div className="flex items-center justify-center w-full sm:w-auto gap-3 sm:gap-4">
-              {/* Previous */}
+            {/* 2. CENTER COLUMN: Playback Navigation (Prev, Play/Pause, Next) */}
+            <div className="flex items-center justify-center gap-5 sm:gap-6 w-full md:w-auto py-1">
+              {/* Prev Button */}
               <button
                 disabled={disabled}
                 onClick={onPrev}
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all duration-200 disabled:opacity-30 disabled:pointer-events-none active:scale-90"
+                className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all duration-200 disabled:opacity-30 disabled:pointer-events-none active:scale-90 shadow-md"
                 title="Previous Sentence"
                 aria-label="Go back five words"
               >
-                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                <ChevronLeft className="h-5 w-5" aria-hidden="true" />
               </button>
 
-              {/* Central Play / Pause — animated button */}
+              {/* Play / Pause Toggle Button */}
               <div className="relative">
-                {/* Pulsing ring when playing */}
                 {isPlaying && (
                   <div
-                    className="absolute inset-0 rounded-2xl bg-violet-500/20 animate-ping pointer-events-none"
-                    style={{ animationDuration: '2s' }}
+                    className="absolute -inset-1 rounded-2xl bg-violet-500/20 blur-sm animate-pulse pointer-events-none"
                     aria-hidden="true"
                   />
                 )}
-
                 <button
                   disabled={disabled}
                   onClick={onPlayPause}
-                  className={`relative flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl text-white shadow-xl focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-30 disabled:pointer-events-none transition-all duration-200 active:scale-95 hover:scale-105 ${
+                  className={`relative flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-xl focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-30 disabled:pointer-events-none transition-all duration-200 active:scale-95 hover:scale-105 ${
                     isPlaying
-                      ? 'bg-gradient-to-tr from-amber-500 to-orange-600 shadow-orange-500/25 ring-1 ring-orange-400/20'
-                      : 'bg-gradient-to-tr from-violet-600 to-indigo-600 shadow-violet-500/25 ring-1 ring-violet-400/20'
+                      ? 'bg-gradient-to-tr from-amber-500 to-orange-600 shadow-orange-500/20 ring-1 ring-orange-400/20'
+                      : 'bg-gradient-to-tr from-violet-600 to-indigo-600 shadow-violet-500/20 ring-1 ring-violet-400/20'
                   }`}
                   title={isPlaying ? 'Pause' : speechStatus === 'paused' ? 'Resume' : 'Play'}
                   aria-label={isPlaying ? 'Pause reading playback' : 'Start reading playback'}
                 >
                   {isPlaying ? (
-                    <Pause className="h-5 w-5 sm:h-6 sm:w-6 fill-white" aria-hidden="true" />
+                    <Pause className="h-6 w-6 fill-white" aria-hidden="true" />
                   ) : (
-                    <Play className="h-5 w-5 sm:h-6 sm:w-6 fill-white ml-0.5" aria-hidden="true" />
+                    <Play className="h-6 w-6 fill-white ml-0.5" aria-hidden="true" />
                   )}
                 </button>
               </div>
 
-              {/* Stop */}
-              <button
-                disabled={disabled}
-                onClick={onStop}
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all duration-200 disabled:opacity-30 disabled:pointer-events-none active:scale-90"
-                title="Stop Playing"
-                aria-label="Stop reading playback"
-              >
-                <Square className="h-3.5 w-3.5" aria-hidden="true" />
-              </button>
-
-              {/* Next */}
+              {/* Next Button */}
               <button
                 disabled={disabled}
                 onClick={onNext}
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all duration-200 disabled:opacity-30 disabled:pointer-events-none active:scale-90"
+                className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all duration-200 disabled:opacity-30 disabled:pointer-events-none active:scale-90 shadow-md"
                 title="Next Sentence"
                 aria-label="Skip forward five words"
               >
-                <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                <ChevronRight className="h-5 w-5" aria-hidden="true" />
               </button>
 
-              {/* Waveform visualization */}
-              <div className="hidden sm:flex items-center gap-[3px] h-5 ml-1" aria-hidden="true">
+              {/* Waveform Visualization (Desktop only) */}
+              <div className="hidden lg:flex items-center gap-[3px] h-5 ml-2" aria-hidden="true">
                 {[...Array(5)].map((_, i) => (
                   <span
                     key={i}
@@ -204,93 +192,54 @@ const AudioControls = React.memo(function AudioControls({
               </div>
             </div>
 
-            {/* ── Right: Speed + Progress + Reset ── */}
-            <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-center sm:justify-end w-full sm:w-auto pt-1 sm:pt-0">
-              {/* Speed presets */}
-              <div className="flex items-center gap-1" role="radiogroup" aria-label="Speech playback speed">
-                <Gauge className="h-3.5 w-3.5 text-violet-400 mr-1 hidden sm:block" aria-hidden="true" />
-                {SPEED_PRESETS.map((speed) => (
-                  <button
-                    key={speed}
-                    disabled={disabled}
-                    onClick={() => onRateChange(speed)}
-                    role="radio"
-                    aria-checked={rate === speed}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-bold focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all duration-200 disabled:opacity-30 disabled:pointer-events-none active:scale-95 hover:scale-105 ${
-                      rate === speed
-                        ? 'bg-violet-600 text-white shadow-md shadow-violet-500/20 ring-1 ring-violet-400/30 scale-105'
-                        : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:border-slate-700 hover:text-slate-200'
-                    }`}
-                    title={`Set speed to ${speed}x`}
-                  >
-                    {speed}x
-                  </button>
-                ))}
+            {/* 3. RIGHT COLUMN: Speed Control, Progress Badge & Reset */}
+            <div className="flex items-center justify-between md:justify-end gap-4 w-full md:w-auto border-t md:border-0 border-slate-900/60 pt-3 md:pt-0">
+              {/* Speed Preset Radio Group */}
+              <div className="flex items-center gap-1.5 flex-1 md:flex-initial" role="radiogroup" aria-label="Speech playback speed">
+                <Gauge className="h-4 w-4 text-violet-400 shrink-0 hidden lg:block" aria-hidden="true" />
+                <div className="flex items-center gap-1 w-full justify-between md:justify-start">
+                  {SPEED_PRESETS.map((speed) => (
+                    <button
+                      key={speed}
+                      disabled={disabled}
+                      onClick={() => onRateChange(speed)}
+                      role="radio"
+                      aria-checked={rate === speed}
+                      className={`flex-1 md:flex-initial px-2.5 py-1.5 rounded-lg text-[10px] font-bold focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all duration-200 disabled:opacity-30 disabled:pointer-events-none active:scale-95 hover:scale-105 text-center ${
+                        rate === speed
+                          ? 'bg-violet-600 text-white shadow-md shadow-violet-500/20 ring-1 ring-violet-400/30 scale-105'
+                          : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:border-slate-700 hover:text-slate-200'
+                      }`}
+                      title={`Set speed to ${speed}x`}
+                    >
+                      {speed}x
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* Progress percentage */}
-              <span
-                className="text-violet-400 font-bold text-xs tabular-nums hidden sm:inline-flex items-center gap-1 bg-violet-500/10 border border-violet-500/20 px-2 py-1 rounded-lg"
-                aria-label={`Read progress: ${Math.round(progress)}%`}
-              >
-                {Math.round(progress)}%
-              </span>
-
-              {/* Reset progress */}
-              {!disabled && (
-                <button
-                  onClick={onResetProgress}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900/80 hover:bg-slate-800 text-slate-500 hover:text-slate-300 border border-slate-800 hover:border-slate-700 transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-violet-500 active:scale-90"
-                  title="Reset progress"
-                  aria-label="Reset saved reading progress"
+              {/* Progress & Reset Controls */}
+              <div className="flex items-center gap-2 shrink-0">
+                <span
+                  className="text-violet-400 font-bold text-xs tabular-nums inline-flex items-center gap-1 bg-violet-500/10 border border-violet-500/20 px-2.5 py-1.5 rounded-xl"
+                  aria-label={`Read progress: ${Math.round(progress)}%`}
                 >
-                  <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
-              )}
-            </div>
-          </div>
+                  {Math.round(progress)}%
+                </span>
 
-          {/* ── Mobile-only: Voice selector row ── */}
-          <div className="flex sm:hidden items-center gap-2 mt-2 pt-2 border-t border-slate-800/40">
-            <div className="flex items-center gap-1.5 shrink-0" role="status" aria-live="polite">
-              <span className="relative flex h-2 w-2">
-                {currentStatus.ring && (
-                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${currentStatus.dot} opacity-75`} />
+                {!disabled && (
+                  <button
+                    onClick={onResetProgress}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-500 hover:text-slate-300 border border-slate-800 hover:border-slate-700 transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-violet-500 active:scale-90 shadow-sm"
+                    title="Reset progress"
+                    aria-label="Reset saved reading progress"
+                  >
+                    <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                  </button>
                 )}
-                <span className={`relative inline-flex rounded-full h-2 w-2 ${currentStatus.dot}`} />
-              </span>
-              <span className={`text-[9px] font-bold uppercase tracking-wider ${currentStatus.color}`}>
-                {currentStatus.label}
-              </span>
+              </div>
             </div>
 
-            <select
-              disabled={disabled || voices.length === 0}
-              value={selectedVoice ? selectedVoice.name : ''}
-              aria-label="Select AI Reader Voice"
-              onChange={(e) => {
-                const voice = voices.find((v) => v.name === e.target.value);
-                onVoiceChange(voice);
-              }}
-              className="flex-1 text-[11px] font-medium text-slate-300 bg-slate-900/80 border border-slate-800 rounded-lg px-2 py-1.5 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 outline-none transition-colors disabled:opacity-40 truncate"
-            >
-              {voices.length === 0 ? (
-                <option>No voices</option>
-              ) : (
-                voices.map((voice) => (
-                  <option key={voice.name} value={voice.name}>
-                    {voice.name}
-                  </option>
-                ))
-              )}
-            </select>
-
-            <span
-              className="text-violet-400 font-bold text-[11px] tabular-nums bg-violet-500/10 border border-violet-500/20 px-2 py-1 rounded-lg"
-              aria-label={`Read progress: ${Math.round(progress)}%`}
-            >
-              {Math.round(progress)}%
-            </span>
           </div>
         </div>
       </div>

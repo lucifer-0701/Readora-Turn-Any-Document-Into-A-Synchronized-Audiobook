@@ -2,7 +2,7 @@
 
 Readora is a high-performance, browser-native, private reading companion designed to extract text from images, documents, and PDFs entirely in the client browser (no server storage, 100% private) and read it aloud with real-time synchronized word highlighting.
 
-This project is fully optimized, accessible, structured, and ready to be deployed directly to Cloudflare Pages.
+This project is fully optimized, accessible, structured, and ready to be deployed directly to Netlify.
 
 ---
 
@@ -40,7 +40,7 @@ project-root/
 ├── frontend/                 # Complete frontend directory module
 │   ├── public/               # Static assets & SPA configurations
 │   │   ├── favicon.svg       # Premium branding favicon
-│   │   └── _redirects        # Cloudflare Pages SPA deep routing redirects
+│   │   └── _redirects        # Netlify SPA deep routing redirects
 │   │
 │   ├── src/                  # React source codes
 │   │   ├── assets/           # React SVGs & PNG components
@@ -69,7 +69,7 @@ project-root/
 │
 ├── README.md                 # Primary directory guide
 ├── .gitignore                # Complete root-level git exclusion list
-└── deployment-guide.md       # High-fidelity Cloudflare Pages deployment roadmap
+└── deployment-guide.md       # High-fidelity Netlify deployment roadmap
 ```
 
 ---
@@ -105,13 +105,13 @@ Set up and launch the application locally in seconds:
 
 ---
 
-## ☁️ Cloudflare Pages Quick Deploy
+## ☁️ Netlify Quick Deploy
 
-1. Connect your project repository to the **Cloudflare Pages** dashboard.
+1. Connect your project repository to the **Netlify** dashboard.
 2. Configure **Build Settings**:
-   * **Root directory**: `frontend`
+   * **Base directory**: `frontend`
    * **Build command**: `npm run build`
-   * **Build output directory**: `dist`
-3. Click **Save and Deploy**!
+   * **Publish directory**: `dist`
+3. Click **Deploy site**!
 
 For detailed step-by-step instructions, troubleshooting tips, and custom domain setup, refer to the [deployment-guide.md](deployment-guide.md).

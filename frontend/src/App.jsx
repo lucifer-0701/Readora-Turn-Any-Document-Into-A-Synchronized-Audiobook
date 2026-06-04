@@ -79,6 +79,7 @@ function App() {
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
 
   const utteranceRef = useRef(null);
+  const currentChunkStartIndexRef = useRef(0);
 
   
   // Stale-closure safe reference container to share real-time state with Web Speech boundary/end events
@@ -105,10 +106,11 @@ function App() {
     };
   }, [currentPage, pages, speechStatus, isPlaying, fileName, rate, selectedVoice]);
 
-  // Chromium SpeechSynthesis 15s timeout heartbeat fix
+  // Chromium SpeechSynthesis 15s timeout heartbeat fix (disabled on mobile to avoid audio stutter)
   useEffect(() => {
     let heartbeat = null;
-    if (speechStatus === 'playing') {
+    const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (speechStatus === 'playing' && !isMobile) {
       heartbeat = setInterval(() => {
         if (typeof window !== 'undefined' && window.speechSynthesis && !window.speechSynthesis.paused) {
           window.speechSynthesis.pause();
@@ -624,13 +626,18 @@ function App() {
         utteranceRef.current.onerror = null;
       }
       window.speechSynthesis.cancel();
+      if (window.activeUtterance) {
+        window.activeUtterance = null;
+      }
     }
     addToast("Document cleared", "info");
   };
 
   // Global speak Page text helper
-  const speakPageText = (rangesToUse, startIndex) => {
+  const speakPageText = (rangesToUse, startIndex, rateOverride = null) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
+
+    currentChunkStartIndexRef.current = startIndex;
 
     // 1. Prevent overlapping speech: Cancel any active/paused speech first.
     if (window.speechSynthesis.paused) {
@@ -646,13 +653,46 @@ function App() {
 
     window.speechSynthesis.cancel();
 
-    // Map spoken words and build exact character ranges for the spoken substring.
-    const spokenWords = rangesToUse.slice(startIndex);
+    // Group remaining words starting from startIndex into a stable text chunk (sentence-chunking)
+    const maxWords = 25; // Safe word-limit per utterance for mobile engines
+    const maxChars = 150; // Safe character-limit per utterance for mobile engines
+    
+    let currentIndex = startIndex;
+    let wordCount = 0;
+    let charCount = 0;
+    
+    while (currentIndex < rangesToUse.length) {
+      const wordObj = rangesToUse[currentIndex];
+      const wordText = wordObj.text;
+      
+      wordCount++;
+      charCount += wordText.length + 1; // accounting for space divider
+      currentIndex++;
+      
+      // Avoid splitting on common abbreviations like Mr., Mrs., Dr.
+      const isAbbreviation = /^(mr|mrs|dr|ms|eg|ie|vs)\.$/i.test(wordText);
+      const endsWithPunctuation = /[.?!]$/.test(wordText) && !isAbbreviation;
+      
+      if (endsWithPunctuation) {
+        break;
+      }
+      
+      if (wordCount >= maxWords || charCount >= maxChars) {
+        break;
+      }
+    }
+    
+    const chunkEndIndex = currentIndex;
+    const spokenWords = rangesToUse.slice(startIndex, chunkEndIndex);
     const textToSpeak = spokenWords.map(w => w.text).join(' ');
+
     if (!textToSpeak.trim()) {
       setIsPlaying(false);
       setSpeechStatus('idle');
       utteranceRef.current = null;
+      if (window.activeUtterance) {
+        window.activeUtterance = null;
+      }
       return;
     }
 
@@ -669,11 +709,18 @@ function App() {
       };
     });
 
+    const activeRate = rateOverride !== null ? rateOverride : rate;
+
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
     if (selectedVoice) {
       utterance.voice = selectedVoice;
     }
-    utterance.rate = rate;
+    utterance.rate = activeRate;
+
+    // iOS Safari aggressive garbage collection prevention
+    if (typeof window !== 'undefined') {
+      window.activeUtterance = utterance;
+    }
 
     // Sync current word indices during browser SpeechSynthesis boundary triggers
     utterance.onboundary = (event) => {
@@ -702,19 +749,27 @@ function App() {
         return;
       }
 
-      // Read real-time values from stale-closure safe stateRef container
-      const { currentPage: livePage, pages: livePages } = stateRef.current;
-      const nextIdx = livePage + 1;
-      
-      if (nextIdx < livePages.length) {
-        setCurrentPage(nextIdx);
-        loadPageText(livePages[nextIdx], nextIdx, livePages);
+      // If we have more chunks on the current page, speak the next chunk
+      if (chunkEndIndex < rangesToUse.length) {
+        speakPageText(rangesToUse, chunkEndIndex, rateOverride);
       } else {
-        setIsPlaying(false);
-        setSpeechStatus('idle');
-        setCurrentWordIndex(-1);
-        setProgress(0);
-        utteranceRef.current = null;
+        // Read real-time values from stale-closure safe stateRef container
+        const { currentPage: livePage, pages: livePages } = stateRef.current;
+        const nextIdx = livePage + 1;
+        
+        if (nextIdx < livePages.length) {
+          setCurrentPage(nextIdx);
+          loadPageText(livePages[nextIdx], nextIdx, livePages);
+        } else {
+          setIsPlaying(false);
+          setSpeechStatus('idle');
+          setCurrentWordIndex(-1);
+          setProgress(0);
+          utteranceRef.current = null;
+          if (window.activeUtterance) {
+            window.activeUtterance = null;
+          }
+        }
       }
     };
 
@@ -724,13 +779,16 @@ function App() {
         return;
       }
 
-      // Ignore manual interruptions (which throw interrupted error codes)
-      if (e.error !== 'interrupted') {
+      // Ignore manual interruptions / cancellations (which throw interrupted/canceled/etc. error codes)
+      if (e.error !== 'interrupted' && e.error !== 'canceled') {
         console.error('SpeechSynthesis error:', e);
         setIsPlaying(false);
         setSpeechStatus('stopped');
         addToast(`Speech error: ${e.error || 'unknown error'}`, 'error');
         utteranceRef.current = null;
+        if (window.activeUtterance) {
+          window.activeUtterance = null;
+        }
       }
     };
 
@@ -741,21 +799,38 @@ function App() {
   };
 
   // Speak text from index helper
-  const speak = (startIndex) => {
-    speakPageText(wordRanges, startIndex);
+  const speak = (startIndex, rateOverride = null) => {
+    speakPageText(wordRanges, startIndex, rateOverride);
   };
 
   const handlePlayPause = () => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
 
+    const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
     if (isPlaying) {
-      window.speechSynthesis.pause();
-      setIsPlaying(false);
-      setSpeechStatus('paused');
-      addToast('Playback paused', 'info');
+      if (isMobile) {
+        // On mobile browsers, standard pause/resume is buggy. We cancel and save position instead.
+        window.speechSynthesis.cancel();
+        if (window.activeUtterance) {
+          window.activeUtterance = null;
+        }
+        setIsPlaying(false);
+        setSpeechStatus('paused');
+        addToast('Playback paused', 'info');
+      } else {
+        window.speechSynthesis.pause();
+        setIsPlaying(false);
+        setSpeechStatus('paused');
+        addToast('Playback paused', 'info');
+      }
     } else {
-      // Workaround pause/resume desynchronizations
-      if (speechStatus === 'paused' || window.speechSynthesis.paused) {
+      if (isMobile && speechStatus === 'paused') {
+        // On mobile, resume from the current word index by starting a fresh speech utterance
+        const resumeIndex = currentWordIndex >= 0 ? currentWordIndex : currentChunkStartIndexRef.current;
+        speak(resumeIndex);
+        addToast('Playback resumed', 'success');
+      } else if (speechStatus === 'paused' || window.speechSynthesis.paused) {
         window.speechSynthesis.resume();
         setIsPlaying(true);
         setSpeechStatus('playing');
@@ -768,7 +843,8 @@ function App() {
           }
         }, 100);
       } else {
-        speak(currentWordIndex >= 0 ? currentWordIndex : 0);
+        const resumeIndex = currentWordIndex >= 0 ? currentWordIndex : currentChunkStartIndexRef.current;
+        speak(resumeIndex);
         addToast('Reading playback started!', 'success');
       }
     }
@@ -782,6 +858,9 @@ function App() {
       utteranceRef.current.onerror = null;
     }
     window.speechSynthesis.cancel();
+    if (window.activeUtterance) {
+      window.activeUtterance = null;
+    }
     setIsPlaying(false);
     setSpeechStatus('stopped');
     setCurrentWordIndex(-1);
@@ -789,8 +868,14 @@ function App() {
     addToast('Playback stopped', 'info');
   };
 
+  const handleBackToHome = () => {
+    handleStop();
+    setShowWelcome(true);
+  };
+
   const handlePrev = () => {
-    const targetIndex = Math.max(0, currentWordIndex - 5);
+    const activeIndex = currentWordIndex >= 0 ? currentWordIndex : currentChunkStartIndexRef.current;
+    const targetIndex = Math.max(0, activeIndex - 5);
     setCurrentWordIndex(targetIndex);
     if (isPlaying) {
       speak(targetIndex);
@@ -800,7 +885,8 @@ function App() {
   };
 
   const handleNext = () => {
-    const targetIndex = Math.min(wordRanges.length - 1, currentWordIndex + 5);
+    const activeIndex = currentWordIndex >= 0 ? currentWordIndex : currentChunkStartIndexRef.current;
+    const targetIndex = Math.min(wordRanges.length - 1, activeIndex + 5);
     setCurrentWordIndex(targetIndex);
     if (isPlaying) {
       speak(targetIndex);
@@ -859,6 +945,9 @@ function App() {
         utteranceRef.current.onerror = null;
       }
       window.speechSynthesis.cancel();
+      if (window.activeUtterance) {
+        window.activeUtterance = null;
+      }
     }
     setIsPlaying(false);
     setSpeechStatus('idle');
@@ -917,7 +1006,8 @@ function App() {
   const handleRateChange = (newRate) => {
     setRate(newRate);
     if (isPlaying || speechStatus === 'playing') {
-      speak(currentWordIndex >= 0 ? currentWordIndex : 0);
+      const resumeIndex = currentWordIndex >= 0 ? currentWordIndex : currentChunkStartIndexRef.current;
+      speak(resumeIndex, newRate);
     }
     addToast(`Playback speed set to ${newRate}x`, 'info');
     analytics.trackSpeedUsed(newRate);
@@ -989,6 +1079,7 @@ function App() {
           onAnalyticsToggle={() => setIsAnalyticsOpen(true)}
           bookmarkCount={docBookmarks.length}
           notesCount={docNotes.length}
+          onBackToHome={handleBackToHome}
         />
 
         <main className="flex-1 mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-8 py-4 sm:py-8 pb-36 sm:pb-36 space-y-6 sm:space-y-8">

@@ -7,6 +7,7 @@ const Header = React.memo(function Header({
   onAnalyticsToggle,
   bookmarkCount = 0,
   notesCount = 0,
+  onBackToHome,
 }) {
   const totalBadge = bookmarkCount + notesCount;
 
@@ -14,24 +15,29 @@ const Header = React.memo(function Header({
     <header className="sticky top-0 z-50 w-full glass-panel" role="banner">
       <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
         <div className="flex h-14 sm:h-16 items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
+          {/* Logo & Back to Home */}
+          <button
+            onClick={onBackToHome}
+            className="flex items-center gap-3 focus:outline-none focus:ring-1 focus:ring-violet-500/50 rounded-xl p-1.5 hover:bg-slate-900/60 active:scale-[0.98] transition-all group text-left"
+            aria-label="Return to welcome page"
+          >
             <div
-              className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/20 ring-1 ring-violet-400/20"
-              aria-hidden="true"
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/20 ring-1 ring-violet-400/20 group-hover:scale-105 transition-transform"
             >
               <Headphones className="h-5 w-5 animate-pulse" />
             </div>
             <div>
-              <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white flex items-center gap-1.5 m-0 leading-none">
+              <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white flex items-center gap-1.5 m-0 leading-none group-hover:text-violet-400 transition-colors">
                 <span>Readora</span>
                 <span className="inline-flex items-center rounded-md bg-violet-500/10 px-2 py-0.5 text-[10px] sm:text-xs font-medium text-violet-400 ring-1 ring-inset ring-violet-500/20">
                   AI
                 </span>
               </h1>
-              <p className="text-[10px] sm:text-xs text-slate-400 mt-1 sm:mt-0.5">Interactive Audio Experiences</p>
+              <p className="text-[10px] sm:text-xs text-slate-400 mt-1 sm:mt-0.5 group-hover:text-slate-300 transition-colors flex items-center gap-1">
+                <span className="text-violet-400 font-bold group-hover:translate-x-[-2px] transition-transform">←</span> Back to Home
+              </p>
             </div>
-          </div>
+          </button>
 
           {/* Nav actions */}
           <nav className="flex items-center gap-1.5 sm:gap-3" aria-label="Quick links">

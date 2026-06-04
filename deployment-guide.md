@@ -1,11 +1,11 @@
 # Readora — Production Deployment Guide
 
-This guide details step-by-step instructions for deploying the **Readora** application to **Cloudflare Pages** for global distribution with high speed and zero server latency.
+This guide details step-by-step instructions for deploying the **Readora** application to **Netlify** for global distribution with high speed and zero server latency.
 
 ---
 
 ## 🛠️ Prerequisites
-1. A **Cloudflare Account** (Free tier is perfectly sufficient).
+1. A **Netlify Account** (Free tier is perfectly sufficient).
 2. A **GitHub** or **GitLab** account containing the pushed codebase.
 3. Node.js environment installed locally for verification.
 
@@ -30,33 +30,31 @@ The compiled SPA bundle will be generated under the `frontend/dist/` folder.
 
 ---
 
-## ☁️ Deploying via Cloudflare Pages (GitHub Integration)
+## ☁️ Deploying via Netlify (GitHub Integration)
 
-Cloudflare Pages provides fully automated, git-integrated CI/CD. Every time you push changes to your repository, Cloudflare will automatically build and publish them.
+Netlify provides fully automated, git-integrated CI/CD. Every time you push changes to your repository, Netlify will automatically build and publish them.
 
 ### Step 1: Connect your Repository
-1. Log in to the [Cloudflare Dashboard](https://dash.cloudflare.com/).
-2. Navigate to the left sidebar and click **Workers & Pages**.
-3. Select the **Pages** tab and click **Create a project** → **Connect to Git**.
-4. Authorize Cloudflare to access your GitHub account and select your repository.
+1. Log in to the [Netlify Dashboard](https://app.netlify.com/).
+2. Click **Add new site** → **Import an existing project**.
+3. Authorize Netlify to access your GitHub account and select your repository.
 
 ### Step 2: Configure Build Settings
 Under the **Build settings** section, supply the following values:
 
 | Setting | Value | Explanation |
 | :--- | :--- | :--- |
-| **Framework preset** | `Vite` | Auto-configures standard Vite behaviors |
-| **Root directory** | `frontend` | **(CRITICAL)** Tells Cloudflare to look inside the `frontend/` folder |
+| **Base directory** | `frontend` | **(CRITICAL)** Tells Netlify to look inside the `frontend/` folder |
 | **Build command** | `npm run build` | Builds the production bundle |
-| **Build output directory** | `dist` | Relative to the root directory (so `frontend/dist/`) |
+| **Publish directory** | `dist` | Relative to the base directory (so `frontend/dist`) |
 
 ### Step 3: Define Environment Variables (Optional)
-If you wish to customize defaults during build time, click **Environment variables (advanced)** and define:
+If you wish to customize defaults during build time, add them under **Environment variables** in the site configuration:
 * `VITE_APP_TITLE` → `"Readora"`
 * `VITE_DEFAULT_LANG` → `"en-US"`
 
-### Step 4: Click Save and Deploy!
-* Cloudflare Pages will spin up a build container, execute `npm run build`, and publish your application to a free custom sub-domain (e.g. `readora.pages.dev`).
+### Step 4: Click Deploy!
+* Netlify will spin up a build container, execute `npm run build`, and publish your application to a free custom sub-domain (e.g. `readora.netlify.app`).
 
 ---
 
@@ -68,17 +66,23 @@ To resolve this, we configured a standard routing fallback file in `public/_redi
 ```text
 /*   /index.html   200
 ```
-Vite automatically copies this file to the root of the `dist/` directory during compilations. Cloudflare Pages automatically detects this file and rewrites all incoming deep URLs back to `index.html`, preserving React state and client routing.
+Vite automatically copies this file to the root of the `dist/` directory during compilations. Netlify automatically detects this file and rewrites all incoming deep URLs back to `index.html`, preserving React state and client routing.
 
 ---
 
-## ⚙️ Deploying via Cloudflare Pages CLI (Wrangler Alternative)
+## ⚙️ Deploying via Netlify CLI (Alternative)
 
-If you prefer to deploy directly from your local terminal without linking your GitHub account, you can use the Cloudflare Wrangler CLI:
+If you prefer to deploy directly from your local terminal without linking your GitHub account, you can use the Netlify CLI:
 
 ```bash
-# 1. Install Wrangler globally or run via npx
-npx wrangler pages deploy frontend/dist --project-name=readora
+# 1. Install Netlify CLI globally
+npm install -g netlify-cli
+
+# 2. Log in to your Netlify account
+npx netlify login
+
+# 3. Deploy the build output to production
+npx netlify deploy --dir=frontend/dist --prod
 ```
 
 ---
@@ -86,10 +90,10 @@ npx wrangler pages deploy frontend/dist --project-name=readora
 ## 🔍 Troubleshooting & FAQs
 
 ### Q1: My build failed with "directory not found" or compile errors.
-* **Fix**: Ensure the **Root directory** in Cloudflare build settings is explicitly set to `frontend`. Cloudflare must build from within the subdirectory, not the workspace root.
+* **Fix**: Ensure the **Base directory** in Netlify build settings is explicitly set to `frontend`. Netlify must build from within the subdirectory, not the workspace root.
 
 ### Q2: PDF parsing or Tesseract OCR doesn't load files.
 * **Fix**: Readora runs 100% locally in the browser for privacy. If external assets fail to download, make sure your browser is connected to the internet to load any required resources, or allow permissions on the console.
 
 ### Q3: How do I configure a custom domain?
-* **Fix**: Go to the Cloudflare Pages dashboard → Select your Project → Navigate to the **Custom domains** tab → click **Set up a custom domain** and enter your domain name (e.g. `reader.yourname.com`). Cloudflare will automatically provision SSL certificates and update DNS records!
+* **Fix**: Go to the Netlify dashboard → Select your Site → Navigate to the **Domain settings** tab → click **Add custom domain** and enter your domain name (e.g. `reader.yourname.com`). Netlify will automatically provision SSL certificates and update DNS records!
