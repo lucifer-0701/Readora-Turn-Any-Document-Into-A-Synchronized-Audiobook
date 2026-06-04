@@ -1,6 +1,5 @@
 import React from 'react';
 import { 
-  Headphones, 
   FileText, 
   Mic2, 
   Shield, 
@@ -16,6 +15,8 @@ import {
   Languages,
   Zap
 } from 'lucide-react';
+import Logo from './Logo';
+import Footer from './Footer';
 
 const FEATURES = [
   {
@@ -102,13 +103,10 @@ export default function WelcomeScreen({ onGetStarted }) {
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/20 ring-1 ring-violet-400/20">
-                <Headphones className="h-5 w-5" />
+                <Logo className="h-5 w-5" />
               </div>
               <h1 className="text-lg font-bold tracking-tight text-white flex items-center gap-1.5 m-0 leading-none">
                 Readora
-                <span className="inline-flex items-center rounded-md bg-violet-500/10 px-1.5 py-0.5 text-[10px] font-bold text-violet-400 ring-1 ring-inset ring-violet-500/20">
-                  AI
-                </span>
               </h1>
             </div>
             <div className="flex items-center gap-4">
@@ -129,18 +127,18 @@ export default function WelcomeScreen({ onGetStarted }) {
       </nav>
 
       {/* ══════════════ Main Hero Area ══════════════ */}
-      <main className="relative z-10 flex-1 flex flex-col items-center px-4 sm:px-6 lg:px-8 py-14 sm:py-24">
-        <div className="w-full max-w-6xl mx-auto text-center space-y-20">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-10 sm:py-16 pb-16 sm:pb-24">
+        <div className="w-full max-w-6xl mx-auto text-center space-y-16">
 
           {/* Hero text section */}
-          <div className="max-w-4xl mx-auto space-y-8">
+          <div className="max-w-4xl mx-auto space-y-6">
             {/* Glowing tag badge */}
             <div className="inline-flex items-center gap-2 rounded-full bg-violet-500/10 border border-violet-500/20 px-4 py-1.5 text-xs font-bold text-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.1)] mx-auto animate-fade-in">
               <Sparkles className="h-3.5 w-3.5 text-violet-400 animate-pulse" />
               <span>Next-Gen Document Intelligence Hub</span>
             </div>
 
-            <h2 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.1] animate-fade-in">
+            <h2 className="text-4xl sm:text-6xl md:text-7.5xl font-extrabold tracking-tight text-white leading-[1.1] animate-fade-in">
               Turn any document into a
               <br />
               <span className="bg-gradient-to-r from-violet-400 via-indigo-400 to-cyan-400 bg-clip-text text-transparent">
@@ -208,7 +206,7 @@ export default function WelcomeScreen({ onGetStarted }) {
               <div className="flex flex-wrap items-center justify-between gap-3 border border-slate-900 bg-slate-950/80 rounded-2xl p-3 shadow-inner select-none">
                 <div className="flex items-center gap-2">
                   <Languages className="h-3.5 w-3.5 text-violet-400" />
-                  <span className="text-[10px] text-slate-500 font-semibold">AI Neural Voice (English)</span>
+                  <span className="text-[10px] text-slate-500 font-semibold">Neural Voice (English)</span>
                 </div>
                 <div className="flex items-center gap-2 mx-auto sm:mx-0">
                   <span className="p-1 rounded-lg bg-slate-900 text-slate-400 text-[10px] font-bold">Prev</span>
@@ -297,67 +295,8 @@ export default function WelcomeScreen({ onGetStarted }) {
         </div>
       </main>
 
-      {/* ══════════════ Professional Footer ══════════════ */}
-      <footer className="relative z-20 border-t border-slate-900/80 bg-slate-950/80 py-10 mt-12 select-none">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-8 border-b border-slate-900">
-            {/* Branding Column */}
-            <div className="text-left space-y-3">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-violet-600 to-indigo-600 text-white shadow-md">
-                  <Headphones className="h-4 w-4" />
-                </div>
-                <span className="text-base font-bold text-white tracking-tight">Readora</span>
-              </div>
-              <p className="text-xs text-slate-500 leading-relaxed max-w-xs">
-                Private, serverless document text-to-speech converter using client-side OCR model architectures.
-              </p>
-            </div>
-
-            {/* Quick Links Column */}
-            <div className="text-left space-y-2.5">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-400">Features</h5>
-              <ul className="text-xs text-slate-500 space-y-2">
-                <li>• Optical Character Recognition (OCR)</li>
-                <li>• Interactive Reading Guide highlights</li>
-                <li>• Local Web Speech synthesis models</li>
-                <li>• Cross-device JSON Library storage</li>
-              </ul>
-            </div>
-
-            {/* Technical Highlights Column */}
-            <div className="text-left space-y-2.5">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-400">Security Architecture</h5>
-              <ul className="text-xs text-slate-500 space-y-2">
-                <li className="flex items-center gap-1.5 text-emerald-500">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  No external analytics tracked
-                </li>
-                <li className="flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-slate-700" />
-                  Local sandbox execution
-                </li>
-                <li className="flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-slate-700" />
-                  Encrypted localStorage cache
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Subfooter */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 text-[11px] text-slate-600">
-            <p>
-              Academic Research Project · AI-Assisted Intelligent Reading System · {new Date().getFullYear()}
-            </p>
-            <div className="flex items-center gap-4">
-              <span>Client Sandbox</span>
-              <span>•</span>
-              <span>Readora v2.0.0</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
+

@@ -17,27 +17,6 @@ import {
   Layers,
 } from 'lucide-react';
 
-// ─── Storage helpers ───────────────────────────────────────────────────────────
-const LS_BOOKMARKS = 'readora_bookmarks';
-const LS_NOTES = 'readora_notes';
-
-function loadLS(key) {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveLS(key, data) {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch (e) {
-    console.error('localStorage write failed', e);
-  }
-}
-
 // ─── Tiny helpers ──────────────────────────────────────────────────────────────
 function formatDate(iso) {
   try {
@@ -85,25 +64,19 @@ export default function NotesBookmarkPanel({
   onJumpToPage,       // (pageIndex) => void
   currentPageIsBookmarked,
   onBookmarkToggle,   // () => void – toggle current page
+  bookmarks = [],
+  notes = [],
+  onDeleteBookmark,
+  onAddNote,
+  onEditNote,
+  onDeleteNote,
 }) {
   const [tab, setTab] = useState('bookmarks'); // 'bookmarks' | 'notes'
-
-  // ── Bookmark state ─────────────────────────────────────────────────────────
-  const [bookmarks, setBookmarks] = useState(() => loadLS(LS_BOOKMARKS));
 
   // Filter bookmarks for the current document
   const docBookmarks = bookmarks.filter((b) => b.fileName === fileName);
 
-  const removeBookmark = (id) => {
-    setBookmarks((prev) => {
-      const next = prev.filter((b) => b.id !== id);
-      saveLS(LS_BOOKMARKS, next);
-      return next;
-    });
-  };
-
-  // ── Notes state ────────────────────────────────────────────────────────────
-  const [notes, setNotes] = useState(() => loadLS(LS_NOTES));
+  // ── Notes local state for entry forms ──────────────────────────────────────
   const [newNoteText, setNewNoteText] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState('');
@@ -116,22 +89,10 @@ export default function NotesBookmarkPanel({
 
   const notesOnCurrentPage = docNotes.filter((n) => n.page === currentPage + 1);
 
-  const addNote = () => {
+  const handleAddNoteClick = () => {
     const trimmed = newNoteText.trim();
     if (!trimmed || !fileName) return;
-    const note = {
-      id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
-      fileName,
-      page: currentPage + 1,
-      text: trimmed,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setNotes((prev) => {
-      const next = [note, ...prev];
-      saveLS(LS_NOTES, next);
-      return next;
-    });
+    onAddNote(trimmed, 0, ''); // add note for current page, empty selection text
     setNewNoteText('');
   };
 
@@ -143,23 +104,8 @@ export default function NotesBookmarkPanel({
   const commitEdit = (id) => {
     const trimmed = editText.trim();
     if (!trimmed) return;
-    setNotes((prev) => {
-      const next = prev.map((n) =>
-        n.id === id ? { ...n, text: trimmed, updatedAt: new Date().toISOString() } : n
-      );
-      saveLS(LS_NOTES, next);
-      return next;
-    });
+    onEditNote(id, trimmed);
     setEditingId(null);
-  };
-
-  const deleteNote = (id) => {
-    setNotes((prev) => {
-      const next = prev.filter((n) => n.id !== id);
-      saveLS(LS_NOTES, next);
-      return next;
-    });
-    if (editingId === id) setEditingId(null);
   };
 
   // Reset new note text on close
@@ -177,7 +123,6 @@ export default function NotesBookmarkPanel({
     }
   }, [tab, isOpen]);
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <AnimatePresence>
       {isOpen && (
@@ -261,7 +206,7 @@ export default function NotesBookmarkPanel({
             )}
 
             {/* Tabs */}
-            <div className="shrink-0 flex items-center gap-0 px-5 pt-4 pb-0">
+            <div className="shrink-0 flex items-center gap-0 px-5 pt-4 pb-0 font-normal">
               {[
                 { key: 'bookmarks', label: 'Bookmarks', icon: Bookmark, count: docBookmarks.length },
                 { key: 'notes', label: 'Notes', icon: FileText, count: docNotes.length },
@@ -319,7 +264,7 @@ export default function NotesBookmarkPanel({
                       <EmptyState
                         icon={Bookmark}
                         title="No bookmarks yet"
-                        body={'Click "Bookmark page" above to save your current reading position.'}
+                        body={'Click "Bookmark page" above or select text to create a selection bookmark.'}
                       />
                     ) : (
                       docBookmarks.map((bm) => (
@@ -354,7 +299,12 @@ export default function NotesBookmarkPanel({
                             <p className="text-xs font-semibold text-slate-200 truncate">
                               {bm.label || `Page ${bm.page}`}
                             </p>
-                            <p className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
+                            {bm.selectedText && (
+                              <blockquote className="border-l-2 border-amber-500/60 pl-2 text-[10px] text-slate-400 italic mt-1 line-clamp-2 leading-relaxed">
+                                "{bm.selectedText}"
+                              </blockquote>
+                            )}
+                            <p className="text-[10px] text-slate-500 flex items-center gap-1 mt-1.5">
                               <CalendarDays className="h-2.5 w-2.5" />
                               {formatDate(bm.createdAt)} · {formatTime(bm.createdAt)}
                             </p>
@@ -364,7 +314,7 @@ export default function NotesBookmarkPanel({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                removeBookmark(bm.id);
+                                onDeleteBookmark(bm.id);
                               }}
                               className="p-1 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors focus:outline-none focus:ring-1 focus:ring-red-500"
                               aria-label="Delete bookmark"
@@ -397,18 +347,18 @@ export default function NotesBookmarkPanel({
                             value={newNoteText}
                             onChange={(e) => setNewNoteText(e.target.value)}
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) addNote();
+                              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleAddNoteClick();
                             }}
                             placeholder="Type your note… (Ctrl+Enter to save)"
                             rows={3}
                             className="w-full bg-transparent text-sm text-slate-200 placeholder-slate-600 px-3.5 py-3 resize-none outline-none rounded-xl"
                           />
-                          <div className="flex items-center justify-between px-3 pb-2.5">
-                            <span className="text-[10px] text-slate-600">Ctrl+Enter to save</span>
+                          <div className="flex items-center justify-between px-3 pb-2.5 select-none">
+                            <span className="text-[10px] text-slate-600 font-medium">Ctrl+Enter to save</span>
                             <button
-                              onClick={addNote}
+                              onClick={handleAddNoteClick}
                               disabled={!newNoteText.trim()}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:pointer-events-none text-white text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:pointer-events-none text-white text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/50 cursor-pointer"
                               aria-label="Save note"
                             >
                               <Plus className="h-3.5 w-3.5" />
@@ -430,14 +380,14 @@ export default function NotesBookmarkPanel({
                       <EmptyState
                         icon={StickyNote}
                         title="No notes yet"
-                        body="Write your first note above to capture thoughts while reading."
+                        body="Write your first note above or select text in the reader to capture notes."
                       />
                     ) : (
                       <div className="space-y-3">
                         {/* Notes on this page */}
                         {notesOnCurrentPage.length > 0 && (
                           <div>
-                            <p className="text-[10px] font-semibold text-violet-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                            <p className="text-[10px] font-semibold text-violet-400 uppercase tracking-wider mb-2 flex items-center gap-1.5 select-none">
                               <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-500" />
                               This page ({notesOnCurrentPage.length})
                             </p>
@@ -451,7 +401,7 @@ export default function NotesBookmarkPanel({
                                 onStartEdit={startEdit}
                                 onCommitEdit={commitEdit}
                                 onCancelEdit={() => setEditingId(null)}
-                                onDelete={deleteNote}
+                                onDelete={onDeleteNote}
                                 highlight
                               />
                             ))}
@@ -461,7 +411,7 @@ export default function NotesBookmarkPanel({
                         {/* Notes on other pages */}
                         {docNotes.filter((n) => n.page !== currentPage + 1).length > 0 && (
                           <div>
-                            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5 select-none">
                               <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-600" />
                               Other pages
                             </p>
@@ -477,7 +427,7 @@ export default function NotesBookmarkPanel({
                                   onStartEdit={startEdit}
                                   onCommitEdit={commitEdit}
                                   onCancelEdit={() => setEditingId(null)}
-                                  onDelete={deleteNote}
+                                  onDelete={onDeleteNote}
                                   onJumpToPage={onJumpToPage}
                                   highlight={false}
                                 />
@@ -533,7 +483,7 @@ function NoteCard({
       }`}
     >
       {/* Page badge + date */}
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-2 select-none">
         <button
           onClick={() => onJumpToPage && onJumpToPage(note.page - 1)}
           disabled={!onJumpToPage}
@@ -601,13 +551,20 @@ function NoteCard({
           className="w-full bg-slate-800 border border-violet-500/40 rounded-lg text-sm text-slate-200 px-3 py-2 resize-none outline-none focus:ring-1 focus:ring-violet-500/50 transition-all"
         />
       ) : (
-        <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
-          {note.text}
-        </p>
+        <div className="space-y-2">
+          {note.selectedText && (
+            <blockquote className="border-l-2 border-violet-500/60 pl-2 text-[10px] text-slate-400 italic line-clamp-2 leading-relaxed bg-slate-950/40 py-1.5 px-2 rounded-r">
+              "{note.selectedText}"
+            </blockquote>
+          )}
+          <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
+            {note.text}
+          </p>
+        </div>
       )}
 
       {/* Timestamps */}
-      <div className="mt-2 flex items-center gap-2 text-[10px] text-slate-600">
+      <div className="mt-2.5 flex items-center gap-2 text-[10px] text-slate-600 select-none">
         <CalendarDays className="h-2.5 w-2.5 shrink-0" />
         <span>Created {formatDate(note.createdAt)} {formatTime(note.createdAt)}</span>
         {note.updatedAt !== note.createdAt && (

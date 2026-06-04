@@ -102,7 +102,7 @@ const AudioControls = React.memo(function AudioControls({
                 <select
                   disabled={disabled || voices.length === 0}
                   value={selectedVoice ? selectedVoice.name : ''}
-                  aria-label="Select AI Reader Voice"
+                  aria-label="Select Reader Voice"
                   onChange={(e) => {
                     const voice = voices.find((v) => v.name === e.target.value);
                     onVoiceChange(voice);

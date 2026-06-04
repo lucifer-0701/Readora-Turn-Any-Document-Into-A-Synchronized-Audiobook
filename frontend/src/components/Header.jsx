@@ -1,5 +1,6 @@
 import React from 'react';
-import { Headphones, BookOpen, StickyNote, Bookmark, BarChart3 } from 'lucide-react';
+import { BookOpen, StickyNote, Bookmark, History } from 'lucide-react';
+import Logo from './Logo';
 
 const Header = React.memo(function Header({
   onHistoryToggle,
@@ -24,14 +25,11 @@ const Header = React.memo(function Header({
             <div
               className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/20 ring-1 ring-violet-400/20 group-hover:scale-105 transition-transform"
             >
-              <Headphones className="h-5 w-5 animate-pulse" />
+              <Logo className="h-5 w-5" />
             </div>
             <div>
               <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white flex items-center gap-1.5 m-0 leading-none group-hover:text-violet-400 transition-colors">
                 <span>Readora</span>
-                <span className="inline-flex items-center rounded-md bg-violet-500/10 px-2 py-0.5 text-[10px] sm:text-xs font-medium text-violet-400 ring-1 ring-inset ring-violet-500/20">
-                  AI
-                </span>
               </h1>
               <p className="text-[10px] sm:text-xs text-slate-400 mt-1 sm:mt-0.5 group-hover:text-slate-300 transition-colors flex items-center gap-1">
                 <span className="text-violet-400 font-bold group-hover:translate-x-[-2px] transition-transform">←</span> Back to Home
@@ -54,14 +52,14 @@ const Header = React.memo(function Header({
               <span className="ml-1">System Online</span>
             </div>
 
-            {/* Analytics button */}
+            {/* History (formerly Analytics) button */}
             <button
               onClick={onAnalyticsToggle}
               className="flex items-center justify-center p-2 sm:px-3 sm:py-2 gap-1.5 btn-glass"
-              aria-label="Open reading analytics dashboard"
+              aria-label="Open reading history dashboard"
             >
-              <BarChart3 className="h-4 w-4 sm:h-4 sm:w-4 text-violet-400" aria-hidden="true" />
-              <span className="hidden sm:inline">Analytics</span>
+              <History className="h-4 w-4 sm:h-4 sm:w-4 text-violet-400" aria-hidden="true" />
+              <span className="hidden sm:inline">History</span>
             </button>
 
             {/* Notes & Bookmarks button */}
@@ -96,3 +94,4 @@ const Header = React.memo(function Header({
 });
 
 export default Header;
+

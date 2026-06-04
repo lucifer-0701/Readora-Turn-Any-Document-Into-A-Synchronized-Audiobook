@@ -27,6 +27,8 @@ const TextDisplay = React.memo(function TextDisplay({
   readingSeconds = 0,
   isTimerRunning = false,
   onToggleTimer,
+  onAddSelectionBookmark,
+  onAddSelectionNote,
 }) {
   const [fontSize, setFontSize] = useState(18);
   const [pageInput, setPageInput] = useState(String(currentPage + 1));
@@ -34,6 +36,80 @@ const TextDisplay = React.memo(function TextDisplay({
   const [prevPage, setPrevPage] = useState(currentPage);
 
   const containerRef = useRef(null);
+
+  // Text selection tooltip states
+  const [selection, setSelection] = useState(null);
+  const [isWritingNote, setIsWritingNote] = useState(false);
+  const [selectionNoteText, setSelectionNoteText] = useState('');
+  const tooltipRef = useRef(null);
+
+  // Mouse/Keyboard selection handler
+  useEffect(() => {
+    const handleSelectionChange = () => {
+      const sel = window.getSelection();
+      const text = sel.toString().trim();
+      if (!text) return;
+
+      if (containerRef.current && sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        if (containerRef.current.contains(range.commonAncestorContainer)) {
+          const rect = range.getBoundingClientRect();
+          const containerRect = containerRef.current.getBoundingClientRect();
+          const scrollTop = containerRef.current.scrollTop;
+          const scrollLeft = containerRef.current.scrollLeft;
+
+          setSelection({
+            text,
+            left: rect.left - containerRect.left + rect.width / 2 + scrollLeft,
+            top: rect.top - containerRect.top + scrollTop,
+          });
+          setIsWritingNote(false);
+          setSelectionNoteText('');
+        }
+      }
+    };
+
+    document.addEventListener('mouseup', handleSelectionChange);
+    document.addEventListener('keyup', handleSelectionChange);
+
+    return () => {
+      document.removeEventListener('mouseup', handleSelectionChange);
+      document.removeEventListener('keyup', handleSelectionChange);
+    };
+  }, []);
+
+  // Click outside to close tooltip
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (tooltipRef.current && !tooltipRef.current.contains(e.target)) {
+        setSelection(null);
+        setIsWritingNote(false);
+        window.getSelection()?.removeAllRanges();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleCreateBookmark = () => {
+    if (selection && onAddSelectionBookmark) {
+      onAddSelectionBookmark(selection.text);
+      setSelection(null);
+      window.getSelection()?.removeAllRanges();
+    }
+  };
+
+  const handleSaveNote = () => {
+    if (selection && onAddSelectionNote && selectionNoteText.trim()) {
+      onAddSelectionNote(selection.text, selectionNoteText);
+      setSelection(null);
+      setIsWritingNote(false);
+      setSelectionNoteText('');
+      window.getSelection()?.removeAllRanges();
+    }
+  };
 
   // Track page input synchronization
   useEffect(() => {
@@ -363,6 +439,72 @@ const TextDisplay = React.memo(function TextDisplay({
                 </div>
               )}
             </div>
+
+            {/* FLOATING SELECTION TOOLTIP */}
+            {selection && (
+              <div
+                ref={tooltipRef}
+                className="absolute z-50 bg-slate-900/95 backdrop-blur-md border border-slate-800 rounded-2xl shadow-2xl p-2 select-none flex flex-col gap-2 transition-all duration-200 animate-fade-in text-xs font-semibold text-left"
+                style={{
+                  left: `${selection.left}px`,
+                  top: `${selection.top - 8}px`,
+                  transform: 'translate(-50%, -100%)',
+                }}
+              >
+                {!isWritingNote ? (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={handleCreateBookmark}
+                      onMouseDown={(e) => e.preventDefault()}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl hover:bg-slate-800 text-amber-400 hover:text-amber-300 transition-colors cursor-pointer"
+                    >
+                      <span>⭐</span>
+                      <span>Bookmark</span>
+                    </button>
+                    <div className="w-[1px] h-4 bg-slate-800" />
+                    <button
+                      onClick={() => setIsWritingNote(true)}
+                      onMouseDown={(e) => e.preventDefault()}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl hover:bg-slate-800 text-violet-400 hover:text-violet-300 transition-colors cursor-pointer"
+                    >
+                      <span>📝</span>
+                      <span>Add Note</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2 p-1.5 w-60">
+                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Add Note for Selection</span>
+                    <textarea
+                      value={selectionNoteText}
+                      onChange={(e) => setSelectionNoteText(e.target.value)}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      placeholder="Type note content..."
+                      rows={3}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-slate-200 placeholder-slate-600 focus:border-violet-500/50 outline-none resize-none"
+                      autoFocus
+                    />
+                    <div className="flex items-center justify-end gap-1.5 mt-1">
+                      <button
+                        onClick={() => setIsWritingNote(false)}
+                        onMouseDown={(e) => e.preventDefault()}
+                        className="px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-700 transition-colors text-[10px] cursor-pointer"
+                      >
+                        Back
+                      </button>
+                      <button
+                        onClick={handleSaveNote}
+                        onMouseDown={(e) => e.preventDefault()}
+                        disabled={!selectionNoteText.trim()}
+                        className="px-2.5 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-500 disabled:opacity-40 disabled:pointer-events-none transition-colors text-[10px] cursor-pointer"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
         ) : (
           /* ══════════════ Empty State ══════════════ */

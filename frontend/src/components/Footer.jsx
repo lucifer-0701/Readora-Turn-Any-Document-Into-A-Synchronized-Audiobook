@@ -1,66 +1,75 @@
 import React from 'react';
-import { Sparkles } from 'lucide-react';
+import Logo from './Logo';
 
 const Footer = React.memo(function Footer() {
   return (
-    <footer className="glass-panel border-t border-slate-900 bg-slate-950/40 pt-12 pb-6 mt-16 text-left" role="contentinfo">
+    <footer className="relative z-20 border-t border-slate-900/80 bg-slate-950/80 py-10 mt-12 select-none" role="contentinfo">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8 border-b border-slate-900">
-          {/* Description column */}
-          <div className="space-y-4 md:col-span-1">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-white tracking-wider">Readora</span>
-              <span className="inline-flex items-center rounded-md bg-violet-500/10 px-2 py-0.5 text-[10px] font-semibold text-violet-400 ring-1 ring-inset ring-violet-500/20">
-                AI
-              </span>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-8 border-b border-slate-900">
+          {/* Branding Column */}
+          <div className="text-left space-y-3">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-violet-600 to-indigo-600 text-white shadow-md">
+                <Logo className="h-4 w-4" />
+              </div>
+              <span className="text-base font-bold text-white tracking-tight">Readora</span>
             </div>
-            <p className="text-xs text-slate-400 leading-relaxed font-normal">
-              A browser‑native, highly private intelligent reading companion designed for final‑year college showcasing. Powered by local Tesseract OCR & PDF parsers, it guarantees offline privacy with zero server‑side latency.
+            <p className="text-xs text-slate-500 leading-relaxed max-w-xs">
+              Private, serverless document text-to-speech converter using client-side OCR model architectures.
             </p>
           </div>
 
-          {/* Tech stack column */}
-          <div className="space-y-3">
-            <h4 className="text-[11px] uppercase tracking-wider font-bold text-slate-500">Core Technologies</h4>
-            <ul className="text-xs text-slate-400 space-y-2 font-normal" role="list">
-              <li>Web Speech API (TTS Synthesis)</li>
-              <li>Tesseract.js (Client‑Side OCR)</li>
-              <li>PDF.js (Offline Document Parsing)</li>
-              <li>React, Vite & Tailwind CSS</li>
+          {/* Quick Links Column */}
+          <div className="text-left space-y-2.5">
+            <h5 className="text-xs font-bold uppercase tracking-wider text-slate-400">Features</h5>
+            <ul className="text-xs text-slate-500 space-y-2 font-normal" role="list">
+              <li>• Optical Character Recognition (OCR)</li>
+              <li>• Interactive Reading Guide highlights</li>
+              <li>• Local Web Speech synthesis models</li>
+              <li>• Cross-device JSON Library storage</li>
             </ul>
           </div>
 
-          {/* Features column */}
-          <div className="space-y-3">
-            <h4 className="text-[11px] uppercase tracking-wider font-bold text-slate-500">Core Benefits</h4>
-            <ul className="text-xs text-slate-400 space-y-2 font-normal" role="list">
-              <li>100% Secure Client‑Side Privacy</li>
-              <li>Synchronized Word Highlights</li>
-              <li>Persisted Progress Restore</li>
-              <li>Comprehensive Reading History</li>
+          {/* Technical Highlights Column */}
+          <div className="text-left space-y-2.5">
+            <h5 className="text-xs font-bold uppercase tracking-wider text-slate-400">Security Architecture</h5>
+            <ul className="text-xs text-slate-500 space-y-2 font-normal" role="list">
+              <li className="flex items-center gap-1.5 text-emerald-500">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                No external analytics tracked
+              </li>
+              <li className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-slate-700" />
+                Local sandbox execution
+              </li>
+              <li className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-slate-700" />
+                Encrypted localStorage cache
+              </li>
             </ul>
-          </div>
-
-          {/* Project Metadata */}
-          <div className="space-y-3">
-            <h4 className="text-[11px] uppercase tracking-wider font-bold text-slate-500">Project Metadata</h4>
-            <div className="space-y-3">
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/10 px-3 py-1 text-xs font-semibold text-violet-400 ring-1 ring-violet-500/20">
-                <Sparkles className="h-3 w-3" />
-                <span>College Viva Ready</span>
-              </div>
-              <p className="text-xs text-slate-400 leading-normal font-normal">
-                Private codebase, developed with performance and full browser‑native compatibility.
-              </p>
-            </div>
           </div>
         </div>
-        <p className="text-[11px] text-slate-600 text-center mt-4">
-          Final Year Project · AI‑Assisted Intelligent Reading System · {new Date().getFullYear()}
-        </p>
+
+        {/* Subfooter */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 text-[11px] text-slate-600 text-center sm:text-left">
+          <div className="space-y-1">
+            <p className="m-0">
+              Academic Research Project – Readora 2026
+            </p>
+            <p className="m-0 text-slate-500 font-medium">
+              Created by Abdul Hussain
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <span>Client Sandbox</span>
+            <span>•</span>
+            <span>Readora v2.0.0</span>
+          </div>
+        </div>
       </div>
     </footer>
   );
 });
 
 export default Footer;
+

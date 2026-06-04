@@ -60,6 +60,12 @@ function App() {
       return raw ? JSON.parse(raw) : [];
     } catch { return []; }
   });
+  const [checkpoints, setCheckpoints] = useState(() => {
+    try {
+      const raw = localStorage.getItem('readora_checkpoints');
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  });
 
   // Image Upload State
   const [imageFile, setImageFile] = useState(null);
@@ -325,7 +331,7 @@ function App() {
   };
 
   // Load a single page text and compute word boundaries
-  const loadPageText = (pageText, pageIndex, allPages = pages) => {
+  const loadPageText = (pageText, pageIndex, allPages = pages, targetWordIndex = -1, startSpeech = false) => {
     setText(pageText);
 
     const ranges = [];
@@ -343,12 +349,12 @@ function App() {
 
     setWordRanges(ranges);
     setWords(wordsOnly);
-    setCurrentWordIndex(-1);
+    setCurrentWordIndex(targetWordIndex);
     setProgress(0);
 
     // Keep speech state correct when switching pages!
-    if (speechStatus === 'playing' || isPlaying) {
-      speakPageText(ranges, 0);
+    if (startSpeech || speechStatus === 'playing' || isPlaying) {
+      speakPageText(ranges, targetWordIndex >= 0 ? targetWordIndex : 0);
     } else {
       setIsPlaying(false);
       setSpeechStatus('idle');
@@ -413,7 +419,7 @@ function App() {
   };
 
   // Compute word boundaries when full document changes
-  const handleTextLoaded = (loadedText, name, existingId = null) => {
+  const handleTextLoaded = (loadedText, name, existingId = null, targetPageIndex = 0, targetWordIndex = -1, startSpeech = false) => {
     setIsLoading(true);
 
     if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -422,20 +428,20 @@ function App() {
 
     const chunkedPages = chunkTextIntoPages(loadedText);
     setPages(chunkedPages);
-    setCurrentPage(0);
+    setCurrentPage(targetPageIndex);
     setFullDocumentText(loadedText);
     setFileName(name);
 
     // Centralized history saving
     saveToHistory(name, loadedText, '', existingId);
 
-    loadPageText(chunkedPages[0] || '', 0, chunkedPages);
+    loadPageText(chunkedPages[targetPageIndex] || '', targetPageIndex, chunkedPages, targetWordIndex, startSpeech);
     setIsLoading(false);
     addToast(`"${name}" loaded successfully!`, 'success');
 
     // Analytics: track file + initial page visit
     analytics.trackFileProcessed(name);
-    analytics.trackPageVisit(name, 0);
+    analytics.trackPageVisit(name, targetPageIndex);
   };
 
   // PDF.js Text Extraction Handler
@@ -809,6 +815,7 @@ function App() {
     const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
     if (isPlaying) {
+      saveCheckpoint();
       if (isMobile) {
         // On mobile browsers, standard pause/resume is buggy. We cancel and save position instead.
         window.speechSynthesis.cancel();
@@ -1018,7 +1025,7 @@ function App() {
     analytics.trackSessionStart();
   };
 
-  // ── Notes & Bookmarks helpers ──────────────────────────────────────────
+  // ── Notes, Bookmarks & Checkpoints helpers ───────────────────────────
   const docBookmarks = bookmarks.filter((b) => b.fileName === fileName);
   const docNotes = notes.filter((n) => n.fileName === fileName);
   const currentPageIsBookmarked = docBookmarks.some((b) => b.page === currentPage + 1);
@@ -1046,18 +1053,164 @@ function App() {
     });
   };
 
-  // Keep notes in sync when panel modifies them (panel uses its own localStorage writes)
-  const refreshNotesFromStorage = () => {
-    try {
-      const raw = localStorage.getItem('readora_notes');
-      setNotes(raw ? JSON.parse(raw) : []);
-    } catch {}
+  const handleBookmarkSelection = (selectedText) => {
+    if (!fileName) return;
+    setBookmarks((prev) => {
+      const bm = {
+        id: `${Date.now()}-${Math.random()}`,
+        fileName,
+        page: currentPage + 1,
+        label: `Page ${currentPage + 1}`,
+        selectedText,
+        createdAt: new Date().toISOString(),
+      };
+      const next = [...prev, bm];
+      try { localStorage.setItem('readora_bookmarks', JSON.stringify(next)); } catch {}
+      return next;
+    });
+    addToast(`Bookmarked selection on page ${currentPage + 1}`, 'success');
   };
-  const refreshBookmarksFromStorage = () => {
-    try {
-      const raw = localStorage.getItem('readora_bookmarks');
-      setBookmarks(raw ? JSON.parse(raw) : []);
-    } catch {}
+
+  const handleNoteSelection = (selectedText, noteText) => {
+    if (!fileName) return;
+    setNotes((prev) => {
+      const note = {
+        id: `${Date.now()}-${Math.random()}`,
+        fileName,
+        page: currentPage + 1,
+        text: noteText.trim(),
+        selectedText,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      const next = [note, ...prev];
+      try { localStorage.setItem('readora_notes', JSON.stringify(next)); } catch {}
+      return next;
+    });
+    addToast(`Saved note on page ${currentPage + 1}`, 'success');
+  };
+
+  const handleAddNote = (text, pageOffset = 0, selectedText = '') => {
+    if (!fileName) return;
+    const note = {
+      id: `${Date.now()}-${Math.random()}`,
+      fileName,
+      page: currentPage + 1 + pageOffset,
+      text: text.trim(),
+      selectedText,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setNotes((prev) => {
+      const next = [note, ...prev];
+      try { localStorage.setItem('readora_notes', JSON.stringify(next)); } catch {}
+      return next;
+    });
+    addToast('Note added', 'success');
+  };
+
+  const handleEditNote = (id, newText) => {
+    setNotes((prev) => {
+      const next = prev.map((n) =>
+        n.id === id ? { ...n, text: newText.trim(), updatedAt: new Date().toISOString() } : n
+      );
+      try { localStorage.setItem('readora_notes', JSON.stringify(next)); } catch {}
+      return next;
+    });
+    addToast('Note updated', 'success');
+  };
+
+  const handleDeleteNote = (id) => {
+    setNotes((prev) => {
+      const next = prev.filter((n) => n.id !== id);
+      try { localStorage.setItem('readora_notes', JSON.stringify(next)); } catch {}
+      return next;
+    });
+    addToast('Note deleted', 'info');
+  };
+
+  const handleDeleteBookmark = (id) => {
+    setBookmarks((prev) => {
+      const next = prev.filter((b) => b.id !== id);
+      try { localStorage.setItem('readora_bookmarks', JSON.stringify(next)); } catch {}
+      return next;
+    });
+    addToast('Bookmark removed', 'info');
+  };
+
+  const saveCheckpoint = () => {
+    if (!fileName || !words || words.length === 0) return;
+    const wordIndex = currentWordIndex >= 0 ? currentWordIndex : 0;
+    const textSnippet = words.slice(wordIndex, wordIndex + 12).map(w => w.text).join(' ');
+
+    const newCp = {
+      id: `${Date.now()}-${Math.random()}`,
+      fileName,
+      pageIndex: currentPage,
+      wordIndex,
+      textSnippet,
+      timestamp: new Date().toISOString(),
+    };
+
+    setCheckpoints((prev) => {
+      const filtered = prev.filter(cp => !(cp.fileName === fileName && cp.pageIndex === currentPage));
+      const next = [newCp, ...filtered].slice(0, 15);
+      try { localStorage.setItem('readora_checkpoints', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+
+  const handleResumeCheckpoint = async (cp) => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    if (window.activeUtterance) {
+      window.activeUtterance = null;
+    }
+    setIsPlaying(false);
+    setSpeechStatus('idle');
+
+    if (cp.fileName !== fileName) {
+      const histItem = history.find(h => h.fileName === cp.fileName);
+      if (histItem) {
+        setIsLoading(true);
+        try {
+          const content = await getDocumentContent(histItem.id);
+          const docText = content || histItem.text;
+          if (docText) {
+            handleTextLoaded(docText, histItem.fileName, histItem.id, cp.pageIndex, cp.wordIndex, true);
+          } else {
+            addToast('Content not found in history database', 'error');
+          }
+        } catch (err) {
+          console.error(err);
+          if (histItem.text) {
+            handleTextLoaded(histItem.text, histItem.fileName, histItem.id, cp.pageIndex, cp.wordIndex, true);
+          } else {
+            addToast('Failed to retrieve content', 'error');
+          }
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        addToast('Document not found in library', 'error');
+      }
+    } else {
+      setCurrentPage(cp.pageIndex);
+      loadPageText(pages[cp.pageIndex], cp.pageIndex, pages, cp.wordIndex, true);
+    }
+
+    setIsAnalyticsOpen(false);
+    addToast('Resumed from checkpoint', 'success');
+  };
+
+  const handleDeleteCheckpoint = (id) => {
+    setCheckpoints(prev => {
+      const next = prev.filter(cp => cp.id !== id);
+      try { localStorage.setItem('readora_checkpoints', JSON.stringify(next)); } catch {}
+      return next;
+    });
+    addToast('Checkpoint removed', 'info');
   };
 
   // Show welcome screen if user hasn't dismissed it
@@ -1075,7 +1228,7 @@ function App() {
       }>
         <Header
           onHistoryToggle={() => setIsHistoryOpen(true)}
-          onNotesToggle={() => { refreshNotesFromStorage(); refreshBookmarksFromStorage(); setIsNotesOpen(true); }}
+          onNotesToggle={() => setIsNotesOpen(true)}
           onAnalyticsToggle={() => setIsAnalyticsOpen(true)}
           bookmarkCount={docBookmarks.length}
           notesCount={docNotes.length}
@@ -1126,6 +1279,8 @@ function App() {
               readingSeconds={readingSeconds}
               isTimerRunning={speechStatus === 'playing'}
               onToggleTimer={handlePlayPause}
+              onAddSelectionBookmark={handleBookmarkSelection}
+              onAddSelectionNote={handleNoteSelection}
             />
 
             <AudioControls
@@ -1165,29 +1320,34 @@ function App() {
           <Suspense fallback={null}>
             <NotesBookmarkPanel
               isOpen={isNotesOpen}
-              onClose={() => { setIsNotesOpen(false); refreshNotesFromStorage(); refreshBookmarksFromStorage(); }}
+              onClose={() => setIsNotesOpen(false)}
               currentPage={currentPage}
               totalPages={pages.length}
               fileName={fileName}
               onJumpToPage={handlePageChange}
               currentPageIsBookmarked={currentPageIsBookmarked}
               onBookmarkToggle={handleBookmarkToggle}
+              bookmarks={bookmarks}
+              notes={notes}
+              onDeleteBookmark={handleDeleteBookmark}
+              onAddNote={handleAddNote}
+              onEditNote={handleEditNote}
+              onDeleteNote={handleDeleteNote}
             />
           </Suspense>
         )}
 
-        {/* Analytics Dashboard — only mount when opened to avoid loading chart chunk eagerly */}
+        {/* Analytics Dashboard (History Panel) — only mount when opened to avoid loading chart chunk eagerly */}
         {isAnalyticsOpen && (
           <Suspense fallback={null}>
             <AnalyticsDashboard
               isOpen={isAnalyticsOpen}
               onClose={() => setIsAnalyticsOpen(false)}
               analytics={analytics.getAnalytics()}
-              onReset={() => { analytics.resetAnalytics(); addToast('Analytics data cleared', 'info'); }}
-              goalsProgress={goalsAchievements.getGoalsProgress()}
-              unlockedIds={goalsAchievements.unlockedIds}
-              onUpdateGoal={goalsAchievements.updateGoal}
-              onResetAchievements={goalsAchievements.resetAchievements}
+              onReset={() => { analytics.resetAnalytics(); setCheckpoints([]); localStorage.removeItem('readora_checkpoints'); addToast('History and checkpoints cleared', 'info'); }}
+              checkpoints={checkpoints}
+              onResumeCheckpoint={handleResumeCheckpoint}
+              onDeleteCheckpoint={handleDeleteCheckpoint}
             />
           </Suspense>
         )}
