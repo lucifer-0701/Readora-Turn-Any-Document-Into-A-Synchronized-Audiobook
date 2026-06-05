@@ -556,15 +556,13 @@ function App() {
       const Tesseract = await import('tesseract.js');
       
       addToast('Initializing OCR Engine...', 'info');
-      worker = await Tesseract.createWorker({
+      worker = await Tesseract.createWorker('eng', 1, {
         logger: (m) => {
           if (m.status === 'recognizing text') {
             setOcrProgress(Math.round(m.progress * 100));
           }
         },
       });
-      await worker.loadLanguage('eng');
-      await worker.initialize('eng');
 
       const result = await worker.recognize(imageFile);
 

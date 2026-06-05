@@ -1,117 +1,155 @@
-# Readora — Transform Documents into Interactive Audio Experiences
+# 🍎 Readora
 
-Readora is a high-performance, browser-native, private reading companion designed to extract text from images, documents, and PDFs entirely in the client browser (no server storage, 100% private) and read it aloud with real-time synchronized word highlighting.
+<p align-items="center">
+  <img src="https://img.shields.io/badge/Productivity-Audio%20Reading-black?style=for-the-badge&logo=appveyor" alt="Productivity Badge"/>
+  <img src="https://img.shields.io/badge/Status-Live%20Demo%20Active-0052CC?style=for-the-badge&logo=netlify" alt="Status Badge"/>
+  <img src="https://img.shields.io/badge/Privacy-100%25%20Local-success?style=for-the-badge&logo=shield" alt="Privacy Badge"/>
+</p>
 
-This project is fully optimized, accessible, structured, and ready to be deployed directly to Netlify.
+<p align-items="center">
+  <strong>Readora transforms static documents and images into immersive, interactive audiobook experiences entirely in your browser.</strong>
+</p>
 
----
-
-## 🌟 Key Features
-
-1. **Client-Side OCR (Tesseract.js)**: Drag, drop or select images containing text, and parse them completely in-browser. Features a live percentage loading spinner.
-2. **Offline PDF Parsing (PDF.js)**: Instantly read multipage PDF files locally. Progress is reported page-by-page.
-3. **Smart Page Pagination**: Multi-page documents are parsed, paginated, and split logically to prevent broken mid-sentence jumps.
-4. **Natural Speech Control (Web Speech API)**: Play, Pause, Resume, Stop, and control speed rates (1.0x → 2.0x) with clear, high-fidelity browser voice synthesizers.
-5. **Synchronized Word-by-Word Highlight**: High-performance, low-latency ambient visual highlighting follows along with the voice.
-6. **Reading Progress Persistence**: Saves and restores your active document, page, playback rate, and last-read word index upon reload. Includes a master Reset option.
-7. **Reading History logs**: Slide-over Sidebar library logs files processed, dates, and total counts.
-8. **Toast Alerts**: Floating glassmorphic alerts announce statuses (Success, Info, Errors) beautifully.
-9. **Universal Accessibility (a11y)**: Fully semantic landmarks, keybind listeners, modal escape boundaries, and aria tags.
+<p align-items="center">
+  Designed for students, professionals, and accessibility-focused users who want to absorb knowledge faster, multitask effortlessly, and maintain high comprehension levels.
+</p>
 
 ---
 
-## 🛠️ Technological Stack
+## 🌐 Live Experience
 
-* **Frontend Orchestration**: React (Vite environment)
-* **Styling & Theme**: HSL Harmonious Dark UI (Tailwind CSS)
-* **Client-Side OCR**: Tesseract.js
-* **Document Parsing**: PDF.js (configured securely in-browser)
-* **Voice Synthesis**: Web Speech API (TTS)
-* **Typography**: Outfit & Inter sans (Google Fonts)
-* **Iconography**: Lucide React
+<p align="center">
+  <a href="https://readorav2.netlify.app/">
+    <img src="https://img.shields.io/badge/Launch%20Readora%20Live%20App%20%E2%86%92-8B5CF6?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Launch App Button" />
+  </a>
+</p>
 
 ---
 
-## 📂 Folder Structure Explanation
+## 🧠 The Problem & 🚀 The Solution
+
+| 🧠 The Problem | 🚀 The Solution |
+| :--- | :--- |
+| **Too Slow:** Traditional reading speeds are bottlenecked by visual fatigue. | **Immersive Audio Engine:** High-fidelity speech synthesis for natural-sounding reading narration. |
+| **No Multitasking:** You must keep your eyes on the screen constantly. | **Hands-Free Auditory Flow:** Listen to articles and PDFs on-the-go or during daily activities. |
+| **Attention Fragmentation:** Hard to stay focused on long, dense wall-of-texts. | **Word-by-Word Tracker:** Visual ambient highlights sync dynamically with the spoken word to preserve visual focus. |
+| **Privacy Concerns:** Uploading files online compromises private data. | **100% In-Browser Privacy:** Fully client-side processing. No files are ever sent to a server. |
+
+---
+
+## 🪄 Key Features
+
+*   **Offline OCR (Tesseract.js)**: Extract text structures from images and photos completely client-side. Includes an interactive live percentage loading progress bar.
+*   **Local PDF Parser (PDF.js)**: Seamlessly extract text content page-by-page from multi-page PDF files locally.
+*   **Session Resume Checkpoints**: Never lose your position. Real-time checkpoints are auto-saved when you pause playback, allowing you to instantly resume from the exact word index.
+*   **Floating Selection Tooltip**: Select any word or sentence in the reader view to summon a floating menu to instantly **⭐ Bookmark** the passage or **📝 Add a Note**.
+*   **Centralized Library Library & Sidebar**: Slides out from the side to show your bookmarked items, annotations, and reading log history.
+*   **Vocal Speed Controller**: Fine-tune speech speed rate (from `0.5x` up to `2.0x`) with a sleek control dial.
+
+---
+
+## 🏗️ System Design
+
+```mermaid
+graph TD
+    A[User Document Upload / Text Paste] --> B{File Type?}
+    B -->|Image File| C[Tesseract.js Local OCR]
+    B -->|PDF File| D[PDF.js Local Parser]
+    B -->|Text Input| E[Direct Context Load]
+    
+    C --> F[Text Page Segmenter]
+    D --> F
+    E --> F
+    
+    F --> G[Word Boundary & Highlights Map]
+    G --> H[Web Speech Synthesis Engine]
+    
+    H --> I[Dynamic Active Highlight UI]
+    H --> J[Audio Output Playback]
+    
+    J --> K[Auto-Save Checkpoint on Pause]
+```
+
+---
+
+## ⚙️ Built With
+
+<p align-items="center">
+  <img src="https://img.shields.io/badge/React%2019-20232A?style=for-the-badge&logo=react&logoColor=61DAFB"/>
+  <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Tailwind%20CSS-38B2AC?style=for-the-badge&logo=tailwindcss&logoColor=white"/>
+  <img src="https://img.shields.io/badge/IndexedDB-0052CC?style=for-the-badge&logo=mongodb&logoColor=white"/>
+  <img src="https://img.shields.io/badge/HTML5%20Web%20Speech-FF6F00?style=for-the-badge&logo=soundcharts&logoColor=white"/>
+</p>
+
+---
+
+## 📂 Architecture (Clean & Scalable)
 
 ```bash
 project-root/
 │
-├── frontend/                 # Complete frontend directory module
-│   ├── public/               # Static assets & SPA configurations
-│   │   ├── favicon.svg       # Premium branding favicon
-│   │   └── _redirects        # Netlify SPA deep routing redirects
-│   │
-│   ├── src/                  # React source codes
-│   │   ├── assets/           # React SVGs & PNG components
-│   │   ├── components/       # Reusable modular UI components
-│   │   │   ├── AudioControls.jsx   # Waveform tracking & vocal triggers
-│   │   │   ├── Header.jsx          # Header brand & library controls
-│   │   │   ├── HistorySidebar.jsx  # Slide-over sidebar for logs
-│   │   │   ├── TextDisplay.jsx     # Spoken highlights & pagination board
-│   │   │   ├── UploadSection.jsx   # Drag-drop panel & paste terminal
+├── frontend/                 # Complete frontend React directory
+│   ├── src/                  # React source files
+│   │   ├── components/       # Modular UI components
+│   │   │   ├── AudioControls.jsx   # Vocal speed dial & playback triggers
+│   │   │   ├── Header.jsx          # Header brand, stats & library panel triggers
+│   │   │   ├── HistorySidebar.jsx  # Slide-over sidebar for reading logs
+│   │   │   ├── TextDisplay.jsx     # Spoken highlights, floating selections & annotations
 │   │   │   └── WelcomeScreen.jsx   # Blurred glassmorphism landing screen
 │   │   │
-│   │   ├── styles/           # Standard HSL stylesheets
-│   │   │   ├── index.css     # Main Tailwind overrides & glass classes
-│   │   │   └── App.css       # Custom local micro-animations
+│   │   ├── hooks/            # Custom logic hooks
+│   │   │   └── useGoalsAchievements.js  # Reading gamification rules
 │   │   │
-│   │   ├── App.jsx           # Master state manager & toast containers
-│   │   └── main.jsx          # Root mount script
-│   │
-│   ├── index.html            # Primary index file & SEO meta-tags
-│   ├── package.json          # Node dependencies & modular build scripts
-│   ├── vite.config.js        # Vite compilation configuration (with path aliases)
-│   ├── postcss.config.js     # PostCSS styling rules
-│   ├── tailwind.config.js    # Tailwind palette presets
-│   ├── eslint.config.js      # Linter settings
-│   └── .env.example          # Environment variable reference template
-│
-├── README.md                 # Primary directory guide
-├── .gitignore                # Complete root-level git exclusion list
-└── deployment-guide.md       # High-fidelity Netlify deployment roadmap
+│   │   ├── utils/            # IndexDB, OCR, and parser utilities
+│   │   │   └── libraryDb.js  # Offline document storage
+│   │   │
+│   │   ├── App.jsx           # Parent state coordinator & context provider
+│   │   └── main.jsx          # DOM mounting core
 ```
 
 ---
 
 ## 🚀 Local Installation & Setup
 
-Set up and launch the application locally in seconds:
+Get the environment running on your computer in minutes:
 
-1. **Clone or Open the workspace**:
-   Make sure you are at the workspace root directory.
-
-2. **Navigate into the frontend subdirectory**:
-   ```bash
-   cd frontend
-   ```
-
-3. **Install clean packages**:
-   ```bash
-   npm install
-   ```
-
-4. **Boot the Vite Development Server**:
-   ```bash
-   npm run dev
-   ```
-   * Open your browser and navigate to `http://localhost:5173` to interact with the system live!
-
-5. **Generate a production bundle**:
-   ```bash
-   npm run build
-   ```
-   * Compiles optimized bundles under `frontend/dist/`.
+1.  **Clone or Open the Repository** and open a terminal.
+2.  **Enter the project directory**:
+    ```bash
+    cd frontend
+    ```
+3.  **Install dependencies**:
+    ```bash
+    npm install
+    ```
+4.  **Launch the local dev server**:
+    ```bash
+    npm run dev
+    ```
+    *   Navigate to `http://localhost:5173` to interact with the application locally!
 
 ---
 
-## ☁️ Netlify Quick Deploy
+## 🧭 Product Roadmap
 
-1. Connect your project repository to the **Netlify** dashboard.
-2. Configure **Build Settings**:
-   * **Base directory**: `frontend`
-   * **Build command**: `npm run build`
-   * **Publish directory**: `dist`
-3. Click **Deploy site**!
+- [x] **Phase 1 — Foundation** (Multi-format local upload, Web Speech engine, and real-time word highlighters).
+- [x] **Phase 2 — Interaction** (Selection-based floating tooltips, local bookmarking, annotations system, and auto-save resume checkpoints).
+- [x] **Phase 3 — Customization** (Custom fonts, custom page dimensions, and library export settings).
+- [ ] **Phase 4 — Cloud Sync** (Secure cross-device data continuity and cloud-backed libraries).
 
-For detailed step-by-step instructions, troubleshooting tips, and custom domain setup, refer to the [deployment-guide.md](deployment-guide.md).
+---
+
+## 👨‍💻 Creator
+
+<p align-items="center">
+  <strong>Abdul Hussain</strong><br/>
+  <em>Frontend Developer • AI Systems Builder • Product Thinker</em>
+</p>
+
+---
+
+## 💡 Product Philosophy
+
+> **Simple. Fast. Invisible complexity.**
+> Readora is built to turn technology into an invisible background layer, making the absorption of complex documents and books feel entirely effortless.
