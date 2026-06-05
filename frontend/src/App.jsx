@@ -48,6 +48,7 @@ function App() {
 
   // Notes & Bookmarks State
   const [isNotesOpen, setIsNotesOpen] = useState(false);
+  const [activeId, setActiveId] = useState(null);
   const [bookmarks, setBookmarks] = useState(() => {
     try {
       const raw = localStorage.getItem('readora_bookmarks');
@@ -86,6 +87,8 @@ function App() {
 
   const utteranceRef = useRef(null);
   const currentChunkStartIndexRef = useRef(0);
+  const chunkEndIndexRef = useRef(0);
+  const trackerIntervalRef = useRef(null);
 
   
   // Stale-closure safe reference container to share real-time state with Web Speech boundary/end events
@@ -200,10 +203,17 @@ function App() {
         try {
           const p = JSON.parse(savedProgress);
           if (p.fullDocumentText && p.fileName) {
-            const chunkedPages = chunkTextIntoPages(p.fullDocumentText);
+            const isOcr = p.fileName && p.fileName.startsWith('OCR:');
+            const chunkedPages = isOcr ? [p.fullDocumentText] : chunkTextIntoPages(p.fullDocumentText);
             setPages(chunkedPages);
             setFullDocumentText(p.fullDocumentText);
             setFileName(p.fileName);
+            let currentHistory = [];
+            try {
+              if (saved) currentHistory = JSON.parse(saved);
+            } catch {}
+            const matchedHist = currentHistory.find(h => h.fileName === p.fileName);
+            setActiveId(p.activeId || (matchedHist ? matchedHist.id : null));
 
             const restoredPage = Math.min(p.currentPage || 0, chunkedPages.length - 1);
             setCurrentPage(restoredPage);
@@ -218,8 +228,10 @@ function App() {
             const regex = /\S+/g;
             let match;
             while ((match = regex.exec(pageText)) !== null) {
-              ranges.push({ text: match[0], start: match.index, end: match.index + match[0].length });
-              wordsOnly.push(match[0]);
+              const wText = match[0];
+              if (wText === '#') continue;
+              ranges.push({ text: wText, start: match.index, end: match.index + wText.length });
+              wordsOnly.push(wText);
             }
             setWordRanges(ranges);
             setWords(wordsOnly);
@@ -277,7 +289,8 @@ function App() {
         fullDocumentText,
         currentPage,
         currentWordIndex,
-        rate
+        rate,
+        activeId
       };
       localStorage.setItem('readora_progress', JSON.stringify(progressData));
 
@@ -299,7 +312,7 @@ function App() {
     }, 1000); // 1-second debounce
 
     return () => clearTimeout(timeoutId);
-  }, [fileName, fullDocumentText, currentPage, currentWordIndex, rate, pages.length]);
+  }, [fileName, fullDocumentText, currentPage, currentWordIndex, rate, pages.length, activeId]);
 
   // Helper to split text naturally into pages
   const chunkTextIntoPages = (fullText) => {
@@ -339,12 +352,14 @@ function App() {
     const regex = /\S+/g;
     let match;
     while ((match = regex.exec(pageText)) !== null) {
+      const wText = match[0];
+      if (wText === '#') continue;
       ranges.push({
-        text: match[0],
+        text: wText,
         start: match.index,
-        end: match.index + match[0].length
+        end: match.index + wText.length
       });
-      wordsOnly.push(match[0]);
+      wordsOnly.push(wText);
     }
 
     setWordRanges(ranges);
@@ -379,6 +394,7 @@ function App() {
     }
 
     const id = existingId || Date.now().toString();
+    setActiveId(id);
 
     // Store full content in IndexedDB to prevent localStorage limit issues
     try {
@@ -416,6 +432,7 @@ function App() {
       }
       return updated;
     });
+    return id;
   };
 
   // Compute word boundaries when full document changes
@@ -426,7 +443,8 @@ function App() {
       window.speechSynthesis.cancel();
     }
 
-    const chunkedPages = chunkTextIntoPages(loadedText);
+    const isOcr = name && name.startsWith('OCR:');
+    const chunkedPages = isOcr ? [loadedText] : chunkTextIntoPages(loadedText);
     setPages(chunkedPages);
     setCurrentPage(targetPageIndex);
     setFullDocumentText(loadedText);
@@ -442,6 +460,35 @@ function App() {
     // Analytics: track file + initial page visit
     analytics.trackFileProcessed(name);
     analytics.trackPageVisit(name, targetPageIndex);
+  };
+
+  const handleUpdatePageText = async (pageIndex, newPageText) => {
+    if (pageIndex < 0 || pageIndex >= pages.length) return;
+
+    const updatedPages = [...pages];
+    updatedPages[pageIndex] = newPageText;
+    setPages(updatedPages);
+
+    let separator = '\n\n---\n\n';
+    if (fullDocumentText.includes('\f')) {
+      separator = '\f';
+    } else if (fullDocumentText.includes('---')) {
+      separator = '---';
+    }
+    const newFullText = updatedPages.join(separator);
+    setFullDocumentText(newFullText);
+
+    loadPageText(newPageText, pageIndex, updatedPages, -1, false);
+
+    const histItem = history.find(item => item.fileName === fileName);
+    const docId = activeId || (histItem ? histItem.id : null);
+    if (docId) {
+      try {
+        await saveDocumentContent(docId, newFullText);
+      } catch (err) {
+        console.error("Failed to save edited document to IndexedDB:", err);
+      }
+    }
   };
 
   // PDF.js Text Extraction Handler
@@ -541,7 +588,113 @@ function App() {
     addToast('Image uploaded! Click "Extract Text (OCR)" to begin.', 'info');
   };
 
-  // Tesseract.js OCR extraction — worker created and terminated per operation
+  const cleanOcrText = (text) => {
+    if (!text) return '';
+
+    const rawLines = text.split(/\n/);
+    const cleaned = [];
+
+    for (let i = 0; i < rawLines.length; i++) {
+      let line = rawLines[i];
+
+      // ── STEP 1: Strip ALL noise symbols ──
+      // Remove isolated noise characters and common OCR garbage
+      line = line.replace(/[|\\/_~+=<>{}[\]@#$%^&*]+/g, ' ');
+      // Remove isolated single letters that are noise (but keep "I" and "a")
+      line = line.replace(/(?<!\w)([b-hj-np-rt-zB-HJ-NP-RT-Z])(?!\w)/g, ' ');
+      // Remove isolated digits that aren't part of real numbers/dates
+      line = line.replace(/(?<!\w)(\d{1,2})(?!\w|\.|\d)/g, (match, num) => {
+        // Keep numbers that look like page numbers or years
+        if (parseInt(num) > 31) return match;
+        return ' ';
+      });
+      // Remove sequences of dots that aren't ellipsis (4+ dots)
+      line = line.replace(/\.{4,}/g, '');
+      // Remove colons and semicolons that appear at start/end or isolated
+      line = line.replace(/(?:^|(?<=\s))[:;](?:\s|$)/g, ' ');
+      // Remove "EF" OCR noise pattern
+      line = line.replace(/\bEF\b/gi, ' ');
+
+      // ── STEP 2: Fix broken words ──
+      // Rejoin hyphenated line breaks: "morn- ing" → "morning"
+      line = line.replace(/(\w+)-\s+(\w+)/g, '$1$2');
+      // Fix spaced-out letters: "h e l l o" (3+ single chars with spaces)
+      line = line.replace(/\b(\w)\s+(?=\w\s+\w\b)/g, (match, ch) => ch);
+
+      // ── STEP 3: Normalize whitespace ──
+      line = line.replace(/\s+/g, ' ').trim();
+
+      // Skip empty or very short garbage lines (1-2 chars of junk)
+      if (!line || line.length < 3) continue;
+      // Skip lines that are mostly non-alphabetic (noise lines)
+      const alphaCount = (line.match(/[a-zA-Z]/g) || []).length;
+      if (alphaCount / line.length < 0.5) continue;
+
+      cleaned.push(line);
+    }
+
+    // ── STEP 4: Detect structure (headings vs paragraphs) ──
+    const structured = [];
+    let currentParagraph = [];
+
+    const flushParagraph = () => {
+      if (currentParagraph.length > 0) {
+        structured.push(currentParagraph.join(' '));
+        currentParagraph = [];
+      }
+    };
+
+    for (let i = 0; i < cleaned.length; i++) {
+      const line = cleaned[i];
+      const wordCount = line.split(/\s+/).length;
+
+      // Detect headings: chapter keywords, ALL CAPS short lines, or title-cased short lines
+      const isChapter = /^(chapter|section|part|book|prologue|epilogue|introduction|conclusion)\b/i.test(line);
+      const isAllCaps = line === line.toUpperCase() && wordCount <= 10 && /[A-Z]{2,}/.test(line);
+      const isShortTitle = wordCount <= 8 && !line.endsWith('.') && !line.endsWith(',');
+
+      if (isChapter || isAllCaps) {
+        flushParagraph();
+        structured.push('# ' + line);
+      } else if (isShortTitle && wordCount >= 2) {
+        // Check if it's title-cased (most words start uppercase)
+        const words = line.split(/\s+/);
+        const capsWords = words.filter(w => /^[A-Z]/.test(w)).length;
+        const minorWords = words.filter(w => /^(of|a|the|and|in|to|for|on|with|at|by|from|but|or|so|yet|an|is|it)$/i.test(w)).length;
+        if ((capsWords + minorWords) >= words.length * 0.8) {
+          flushParagraph();
+          structured.push('# ' + line);
+        } else {
+          currentParagraph.push(line);
+        }
+      } else {
+        // Regular text line — accumulate into paragraph
+        if (currentParagraph.length > 0) {
+          const lastLine = currentParagraph[currentParagraph.length - 1];
+          // If previous line ended with sentence-ending punctuation, start new paragraph
+          if (/[.?!'""]$/.test(lastLine) && /^[A-Z]/.test(line)) {
+            flushParagraph();
+          }
+        }
+        currentParagraph.push(line);
+      }
+    }
+    flushParagraph();
+
+    // ── STEP 5: Final cleanup pass on each block ──
+    const finalBlocks = structured.map(block => {
+      // Remove any remaining double spaces
+      block = block.replace(/\s+/g, ' ').trim();
+      // Fix common OCR substitutions
+      block = block.replace(/\bl\b(?=[a-z])/g, 'I'); // lowercase L before lowercase = likely "I"
+      block = block.replace(/\s+([.,;:!?])/g, '$1'); // remove space before punctuation
+      return block;
+    }).filter(b => b.length > 0);
+
+    return finalBlocks.join('\n\n');
+  };
+
+  // Tesseract.js OCR extraction — uses direct recognize call to avoid worker postMessage cloning errors
   const handleExtractOCR = async () => {
     if (!imageFile) return;
 
@@ -550,13 +703,12 @@ function App() {
     setOcrError(null);
     addToast('Extracting text with Tesseract.js OCR...', 'info');
 
-    let worker = null;
     try {
       // Dynamically load Tesseract only when OCR is needed
       const Tesseract = await import('tesseract.js');
       
-      addToast('Initializing OCR Engine...', 'info');
-      worker = await Tesseract.createWorker('eng', 1, {
+      addToast('Running OCR recognition...', 'info');
+      const result = await Tesseract.recognize(imageFile, 'eng', {
         logger: (m) => {
           if (m.status === 'recognizing text') {
             setOcrProgress(Math.round(m.progress * 100));
@@ -564,12 +716,11 @@ function App() {
         },
       });
 
-      const result = await worker.recognize(imageFile);
-
-      const extractedText = result.data.text.trim();
+      const rawText = result.data.text || '';
+      const extractedText = cleanOcrText(rawText);
 
       if (!extractedText) {
-        const errorMsg = 'No text could be detected in this image. Try a clearer image.';
+        const errorMsg = 'No readable text could be detected in this image. Try a clearer image.';
         setOcrError(errorMsg);
         setIsLoading(false);
         addToast(errorMsg, 'error');
@@ -590,10 +741,6 @@ function App() {
       setOcrError(errorMsg);
       addToast(errorMsg, 'error');
     } finally {
-      // Always terminate the worker to free memory
-      if (worker) {
-        try { await worker.terminate(); } catch {}
-      }
       setIsLoading(false);
     }
   };
@@ -613,6 +760,12 @@ function App() {
     setOcrError(null);
     setOcrProgress(0);
 
+    // Kill word tracker timer
+    if (trackerIntervalRef.current) {
+      clearInterval(trackerIntervalRef.current);
+      trackerIntervalRef.current = null;
+    }
+
     // Clean up image preview URL
     if (imagePreview) {
       URL.revokeObjectURL(imagePreview);
@@ -625,6 +778,7 @@ function App() {
 
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       if (utteranceRef.current) {
+        utteranceRef.current.onstart = null;
         utteranceRef.current.onboundary = null;
         utteranceRef.current.onend = null;
         utteranceRef.current.onerror = null;
@@ -635,6 +789,33 @@ function App() {
       }
     }
     addToast("Document cleared", "info");
+  };
+
+  const resumeTimerTracking = () => {
+    if (trackerIntervalRef.current) {
+      clearInterval(trackerIntervalRef.current);
+    }
+    
+    const activeRate = rate;
+    const baseWpm = 175;
+    const currentWpm = baseWpm * activeRate;
+    const delayPerWord = (60 * 1000) / currentWpm;
+    
+    let timerIndex = currentWordIndex >= 0 ? currentWordIndex : currentChunkStartIndexRef.current;
+    const endLimit = chunkEndIndexRef.current || wordRanges.length;
+
+    trackerIntervalRef.current = setInterval(() => {
+      if (timerIndex < endLimit - 1) {
+        timerIndex++;
+        setCurrentWordIndex(timerIndex);
+        const percentage = wordRanges.length > 1 
+          ? (timerIndex / (wordRanges.length - 1)) * 100 
+          : 100;
+        setProgress(percentage);
+      } else {
+        clearInterval(trackerIntervalRef.current);
+      }
+    }, delayPerWord);
   };
 
   // Global speak Page text helper
@@ -650,9 +831,15 @@ function App() {
 
     // Safely detach all listeners from the previous utterance to prevent state race-conditions
     if (utteranceRef.current) {
+      utteranceRef.current.onstart = null;
       utteranceRef.current.onboundary = null;
       utteranceRef.current.onend = null;
       utteranceRef.current.onerror = null;
+    }
+
+    // Clear any active tracking intervals
+    if (trackerIntervalRef.current) {
+      clearInterval(trackerIntervalRef.current);
     }
 
     window.speechSynthesis.cancel();
@@ -687,6 +874,8 @@ function App() {
     }
     
     const chunkEndIndex = currentIndex;
+    chunkEndIndexRef.current = chunkEndIndex;
+
     const spokenWords = rangesToUse.slice(startIndex, chunkEndIndex);
     const textToSpeak = spokenWords.map(w => w.text).join(' ');
 
@@ -699,19 +888,6 @@ function App() {
       }
       return;
     }
-
-    // Pre-calculate exact character indexes inside the newly formed spoken string
-    let currentLength = 0;
-    const spokenRanges = spokenWords.map((wordObj, i) => {
-      const start = currentLength;
-      const end = start + wordObj.text.length;
-      currentLength = end + 1; // +1 accounts for the space divider
-      return {
-        originalIndex: startIndex + i,
-        start,
-        end
-      };
-    });
 
     const activeRate = rateOverride !== null ? rateOverride : rate;
 
@@ -726,31 +902,46 @@ function App() {
       window.activeUtterance = utterance;
     }
 
-    // Sync current word indices during browser SpeechSynthesis boundary triggers
-    utterance.onboundary = (event) => {
-      // Discard obsolete utterance events
-      if (utteranceRef.current !== utterance) {
-        return;
-      }
+    // Timer progression setup
+    let timerIndex = startIndex;
+    const baseWpm = 175; // Average human reading speed
+    const currentWpm = baseWpm * activeRate;
+    const delayPerWord = (60 * 1000) / currentWpm;
 
-      if (event.name === 'word') {
-        const charIndex = event.charIndex;
-        // Search spokenRanges for current matching index
-        const matched = spokenRanges.find(r => charIndex >= r.start && charIndex <= r.end + 1);
-        if (matched) {
-          setCurrentWordIndex(matched.originalIndex);
+    const startTrackerTimer = () => {
+      if (trackerIntervalRef.current) {
+        clearInterval(trackerIntervalRef.current);
+      }
+      trackerIntervalRef.current = setInterval(() => {
+        if (timerIndex < chunkEndIndex - 1) {
+          timerIndex++;
+          setCurrentWordIndex(timerIndex);
           const percentage = rangesToUse.length > 1 
-            ? (matched.originalIndex / (rangesToUse.length - 1)) * 100 
+            ? (timerIndex / (rangesToUse.length - 1)) * 100 
             : 100;
           setProgress(percentage);
+        } else {
+          clearInterval(trackerIntervalRef.current);
         }
-      }
+      }, delayPerWord);
     };
 
+    utterance.onstart = () => {
+      if (utteranceRef.current !== utterance) return;
+      setIsPlaying(true);
+      setSpeechStatus('playing');
+      startTrackerTimer();
+    };
+
+    // Word tracker timer drives the progression. Browser boundaries are ignored to prevent micro-jitter.
+
     utterance.onend = () => {
-      // Discard obsolete utterance events
       if (utteranceRef.current !== utterance) {
         return;
+      }
+
+      if (trackerIntervalRef.current) {
+        clearInterval(trackerIntervalRef.current);
       }
 
       // If we have more chunks on the current page, speak the next chunk
@@ -778,9 +969,12 @@ function App() {
     };
 
     utterance.onerror = (e) => {
-      // Discard obsolete utterance events
       if (utteranceRef.current !== utterance) {
         return;
+      }
+
+      if (trackerIntervalRef.current) {
+        clearInterval(trackerIntervalRef.current);
       }
 
       // Ignore manual interruptions / cancellations (which throw interrupted/canceled/etc. error codes)
@@ -814,6 +1008,13 @@ function App() {
 
     if (isPlaying) {
       saveCheckpoint();
+
+      // Stop the word tracker timer on pause
+      if (trackerIntervalRef.current) {
+        clearInterval(trackerIntervalRef.current);
+        trackerIntervalRef.current = null;
+      }
+
       if (isMobile) {
         // On mobile browsers, standard pause/resume is buggy. We cancel and save position instead.
         window.speechSynthesis.cancel();
@@ -839,6 +1040,10 @@ function App() {
         window.speechSynthesis.resume();
         setIsPlaying(true);
         setSpeechStatus('playing');
+
+        // Restart the word tracker timer on resume
+        resumeTimerTracking();
+
         addToast('Playback resumed', 'success');
 
         // Browser fallback helper: if resume hangs, re-trigger
@@ -857,7 +1062,15 @@ function App() {
 
   const handleStop = () => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
+
+    // Kill word tracker timer
+    if (trackerIntervalRef.current) {
+      clearInterval(trackerIntervalRef.current);
+      trackerIntervalRef.current = null;
+    }
+
     if (utteranceRef.current) {
+      utteranceRef.current.onstart = null;
       utteranceRef.current.onboundary = null;
       utteranceRef.current.onend = null;
       utteranceRef.current.onerror = null;
@@ -1266,7 +1479,7 @@ function App() {
               onClear={handleClear}
             />
 
-            <TextDisplay
+             <TextDisplay
               text={text}
               words={words}
               currentWordIndex={currentWordIndex}
@@ -1279,6 +1492,8 @@ function App() {
               onToggleTimer={handlePlayPause}
               onAddSelectionBookmark={handleBookmarkSelection}
               onAddSelectionNote={handleNoteSelection}
+              onUpdatePageText={handleUpdatePageText}
+              onStartEditing={handleStop}
             />
 
             <AudioControls

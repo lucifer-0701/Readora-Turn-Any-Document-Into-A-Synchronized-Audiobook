@@ -11,6 +11,8 @@ import {
   Maximize2,
   Sparkles,
   Hash,
+  Edit2,
+  Check,
 } from 'lucide-react';
 
 // Approximate words per visual "line" for line-highlight grouping
@@ -29,13 +31,57 @@ const TextDisplay = React.memo(function TextDisplay({
   onToggleTimer,
   onAddSelectionBookmark,
   onAddSelectionNote,
+  onUpdatePageText,
+  onStartEditing,
 }) {
   const [fontSize, setFontSize] = useState(18);
   const [pageInput, setPageInput] = useState(String(currentPage + 1));
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [prevPage, setPrevPage] = useState(currentPage);
 
+  // Edit mode states
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editText, setEditText] = useState('');
+  const editTextareaRef = useRef(null);
+
   const containerRef = useRef(null);
+
+  // Auto-scroll: smoothly bring active word into view
+  useEffect(() => {
+    if (currentWordIndex >= 0 && containerRef.current) {
+      const active = containerRef.current.querySelector('.active-word');
+      if (active) {
+        const container = containerRef.current;
+        const cRect = container.getBoundingClientRect();
+        const aRect = active.getBoundingClientRect();
+        // Only scroll if the word is outside the visible middle zone
+        const isVisible = aRect.top >= cRect.top + 60 && aRect.bottom <= cRect.bottom - 60;
+        if (!isVisible) {
+          active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    }
+  }, [currentWordIndex]);
+
+  // Parse text into paragraphs with heading detection
+  const getParagraphsData = () => {
+    if (!text) return [];
+    const blocks = text.split(/\n\s*\n+/);
+    let wordIdx = 0;
+
+    return blocks.map((block) => {
+      const isHeading = block.trimStart().startsWith('#');
+      const cleanBlock = isHeading ? block.replace(/^#\s*/, '').trim() : block.trim();
+      const blockWords = cleanBlock.split(/\s+/).filter(Boolean);
+
+      const words = blockWords.map((w) => ({
+        text: w,
+        globalIdx: wordIdx++,
+      }));
+
+      return { isHeading, words };
+    });
+  };
 
   // Text selection tooltip states
   const [selection, setSelection] = useState(null);
@@ -116,27 +162,7 @@ const TextDisplay = React.memo(function TextDisplay({
     setPageInput(String(currentPage + 1));
   }, [currentPage]);
 
-  // ── Auto-scroll active word into view ──
-  useEffect(() => {
-    if (currentWordIndex >= 0 && containerRef.current) {
-      const active = containerRef.current.querySelector('.word-active');
-      if (active) {
-        const container = containerRef.current;
-        const cRect = container.getBoundingClientRect();
-        const aRect = active.getBoundingClientRect();
-        
-        // Only scroll if the active word is not already visible inside the container view
-        const isVisible = (
-          aRect.top >= cRect.top + 40 &&
-          aRect.bottom <= cRect.bottom - 40
-        );
-        
-        if (!isVisible) {
-          active.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }
-    }
-  }, [currentWordIndex]);
+
 
   // ── Helpers ──
   const formatTime = (secs) => {
@@ -278,6 +304,50 @@ const TextDisplay = React.memo(function TextDisplay({
             </div>
           )}
 
+          {/* Edit mode toggle */}
+          {text && onUpdatePageText && (
+            <button
+              onClick={() => {
+                if (isEditMode) {
+                  // Save edits and exit
+                  if (editText !== text) {
+                    onUpdatePageText(currentPage, editText);
+                  }
+                  setIsEditMode(false);
+                } else {
+                  // Enter edit mode — stop speech first
+                  if (onStartEditing) onStartEditing();
+                  setEditText(text);
+                  setIsEditMode(true);
+                  setTimeout(() => {
+                    if (editTextareaRef.current) {
+                      editTextareaRef.current.focus();
+                    }
+                  }, 50);
+                }
+              }}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-bold transition-all focus:outline-none focus:ring-1 focus:ring-violet-500 ${
+                isEditMode
+                  ? 'bg-emerald-600/15 border-emerald-500/30 text-emerald-400 hover:bg-emerald-600/25'
+                  : 'bg-slate-950/80 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+              }`}
+              title={isEditMode ? 'Save & exit edit mode' : 'Edit document'}
+              aria-label={isEditMode ? 'Save and exit edit mode' : 'Edit document text'}
+            >
+              {isEditMode ? (
+                <>
+                  <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>Done</span>
+                </>
+              ) : (
+                <>
+                  <Edit2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span className="hidden sm:inline">Edit</span>
+                </>
+              )}
+            </button>
+          )}
+
           {/* Focus mode toggle */}
           {text && (
             <button
@@ -346,71 +416,117 @@ const TextDisplay = React.memo(function TextDisplay({
                 </div>
               )}
 
-              {/* Word-by-word rendering with line-level highlighting */}
-              <div
-                className="text-slate-300 leading-[2.0] tracking-wide font-light selection:bg-violet-500/20"
-                style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
-              >
-                {words.length > 0
-                  ? (() => {
-                      // Group words into approximate visual lines
-                      const lines = [];
-                      for (let i = 0; i < words.length; i += WORDS_PER_LINE) {
-                        lines.push({
-                          startIdx: i,
-                          words: words.slice(i, i + WORDS_PER_LINE),
+              {/* Word-by-word rendering OR Edit textarea */}
+              {isEditMode ? (
+                <div className="relative animate-fade-in" style={{ animationDuration: '0.2s' }}>
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-emerald-400/80 select-none">
+                      Editing Mode
+                    </span>
+                  </div>
+                  <textarea
+                    ref={editTextareaRef}
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    className="w-full min-h-[400px] bg-slate-950/60 border border-slate-800/80 rounded-2xl px-5 py-4 text-slate-300 leading-[2.0] tracking-wide font-light placeholder-slate-600 focus:border-violet-500/40 focus:ring-1 focus:ring-violet-500/30 outline-none resize-y transition-colors"
+                    style={{
+                      fontSize: `${fontSize}px`,
+                      fontFamily: "'Inter', system-ui, sans-serif",
+                    }}
+                    placeholder="Start typing or edit the text..."
+                    spellCheck="true"
+                    aria-label="Edit document text"
+                  />
+                  <div className="flex items-center justify-between mt-3">
+                    <span className="text-[10px] text-slate-600 font-medium">
+                      {editText.split(/\s+/).filter(Boolean).length} words · {editText.length} characters
+                    </span>
+                    <button
+                      onClick={() => {
+                        if (editText !== text) {
+                          onUpdatePageText(currentPage, editText);
+                        }
+                        setIsEditMode(false);
+                      }}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-600/25 text-xs font-bold transition-all cursor-pointer"
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                      Save Changes
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="text-slate-300 leading-[2.0] tracking-wide font-light selection:bg-violet-500/20"
+                  style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+                >
+                  {words.length > 0
+                    ? (() => {
+                        const paragraphsData = getParagraphsData();
+                        return paragraphsData.map((pData, pIdx) => {
+                          if (pData.isHeading) {
+                            return (
+                              <h3
+                                key={pIdx}
+                                className="text-xl sm:text-2xl font-extrabold text-white mt-8 mb-5 tracking-tight leading-snug"
+                              >
+                                {pData.words.map((wObj) => {
+                                  const isActive = wObj.globalIdx === currentWordIndex;
+                                  const isPast = currentWordIndex >= 0 && wObj.globalIdx < currentWordIndex;
+
+                                  return (
+                                    <span
+                                      key={wObj.globalIdx}
+                                      onClick={() => onWordClick && onWordClick(wObj.globalIdx)}
+                                      className={`inline-block cursor-pointer transition-all duration-200 mx-[1px] rounded-md px-[3px] py-[1px] ${
+                                        isActive
+                                          ? 'active-word'
+                                          : isPast
+                                          ? 'text-slate-500'
+                                          : 'text-white hover:text-violet-200'
+                                      }`}
+                                    >
+                                      {wObj.text}{' '}
+                                    </span>
+                                  );
+                                })}
+                              </h3>
+                            );
+                          } else {
+                            return (
+                              <p
+                                key={pIdx}
+                                className="mb-5 leading-[2.0] tracking-wide"
+                              >
+                                {pData.words.map((wObj) => {
+                                  const isActive = wObj.globalIdx === currentWordIndex;
+                                  const isPast = currentWordIndex >= 0 && wObj.globalIdx < currentWordIndex;
+
+                                  return (
+                                    <span
+                                      key={wObj.globalIdx}
+                                      onClick={() => onWordClick && onWordClick(wObj.globalIdx)}
+                                      className={`inline-block cursor-pointer transition-all duration-200 mx-[1px] rounded-md px-[3px] py-[1px] ${
+                                        isActive
+                                          ? 'active-word'
+                                          : isPast
+                                          ? 'text-slate-500'
+                                          : 'text-slate-300 hover:text-white'
+                                      }`}
+                                    >
+                                      {wObj.text}{' '}
+                                    </span>
+                                  );
+                                })}
+                              </p>
+                            );
+                          }
                         });
-                      }
-
-                      return lines.map((line, lineIdx) => {
-                        const isActiveLine = lineIdx === currentLineIndex;
-                        return (
-                          <span
-                            key={lineIdx}
-                            className={`inline transition-all duration-350 ${
-                              isActiveLine ? 'line-active' : ''
-                            }`}
-                          >
-                            {line.words.map((word, wordOffset) => {
-                              const globalIdx = line.startIdx + wordOffset;
-                              const isActive = globalIdx === currentWordIndex;
-                              const isPast = currentWordIndex >= 0 && globalIdx < currentWordIndex;
-
-                              return (
-                                <span
-                                  key={globalIdx}
-                                  onClick={() => onWordClick && onWordClick(globalIdx)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                      e.preventDefault();
-                                      onWordClick && onWordClick(globalIdx);
-                                    }
-                                  }}
-                                  tabIndex={0}
-                                  role="button"
-                                  aria-label={`Word ${globalIdx + 1}: ${word}`}
-                                  aria-pressed={isActive}
-                                  className={`cursor-pointer mx-[2px] rounded-md px-0.5 py-0.5 transition-all duration-100 focus:outline-none focus:ring-1 focus:ring-violet-500/60 ${
-                                    isActive
-                                      ? 'word-active'
-                                      : isPast
-                                      ? 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/30'
-                                      : isActiveLine
-                                      ? 'text-slate-200 hover:bg-slate-800/40 hover:text-white'
-                                      : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
-                                  }`}
-                                >
-                                  {word}
-                                </span>
-                              );
-                            })}
-                            {' '}
-                          </span>
-                        );
-                      });
-                    })()
-                  : text}
-              </div>
+                      })()
+                    : text}
+                </div>
+              )}
 
               {/* Bottom page navigation */}
               {totalPages > 1 && (

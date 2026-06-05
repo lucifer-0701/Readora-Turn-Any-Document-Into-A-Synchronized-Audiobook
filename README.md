@@ -1,4 +1,4 @@
-# 🍎 Readora
+# Readora
 
 <p align-items="center">
   <img src="https://img.shields.io/badge/Productivity-Audio%20Reading-black?style=for-the-badge&logo=appveyor" alt="Productivity Badge"/>

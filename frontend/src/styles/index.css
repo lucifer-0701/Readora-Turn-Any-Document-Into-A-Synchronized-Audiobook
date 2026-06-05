@@ -46,21 +46,14 @@
 }
 
 /* ===== Active Word Highlighting ===== */
-.word-active {
-  @apply text-white font-semibold px-1.5 py-0.5 rounded-md inline-block;
-  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
-  box-shadow: 0 0 16px rgba(139, 92, 246, 0.45), 0 0 4px rgba(139, 92, 246, 0.25);
-  transform: scale(1.06);
-  transition: all 0.15s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* Active line reading-guide highlight */
-.line-active {
-  @apply rounded-lg transition-all duration-300;
-  background: rgba(139, 92, 246, 0.04);
-  border-left: 3px solid rgba(139, 92, 246, 0.35);
-  padding-left: 12px;
-  margin-left: -15px;
+.active-word {
+  background: rgba(139, 92, 246, 0.25);
+  color: white !important;
+  border-radius: 6px;
+  padding: 2px 4px;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.4);
+  transform: scale(1.05);
 }
 
 .sentence-active {
